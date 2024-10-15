@@ -1,0 +1,41 @@
+version: '3'
+
+services:
+  frontend:
+    container_name: nextjs-app
+    build:
+      context: ./mapquester_frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./mapquester_frontend:/app
+      - /app/node_modules
+    depends_on:
+      - mapquester_backend
+    environment:
+      - NODE_ENV=production
+
+  backend:
+    container_name: django-app
+    build:
+      context: ./mapquester_backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./mapquester_backend:/app
+    environment:
+      - DEBUG=1
+    depends_on:
+      - db
+
+  db:
+    image: postgres:17
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydatabase
+    volumes:
+      - ./db_data:/var/lib/postgresql/data
