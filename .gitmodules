@@ -1,0 +1,3 @@
+[submodule "mapquester_frontend"]
+	path = mapquester_frontend
+	url = git@github.com:Software-Engineerin-I2-Team-9/mapquester_frontend.git
