@@ -1,13 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-const LoginForm = ({ onLogin, onSignup }) => {
+interface LoginFormProps {
+  onLogin: (username: string, password: string) => void;
+  onSignup: () => void;
+}
+
+const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onSignup }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!username || !password) {
+      alert('Please enter both username and password');
+      return;
+    }
     onLogin(username, password);
   };
 
@@ -49,6 +59,7 @@ const SplashScreen = () => (
 
 export default function Home() {
   const [showSplash, setShowSplash] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -60,10 +71,13 @@ export default function Home() {
 
   const handleLogin = (username, password) => {
     console.log('Login attempt:', username, password);
+    // Here you would typically verify credentials
+    // For now, we'll just redirect to the home page
+    router.push('/home');
   };
 
   const handleSignup = () => {
-    console.log('Signup clicked');
+    router.push('/signup');
   };
 
   return (
