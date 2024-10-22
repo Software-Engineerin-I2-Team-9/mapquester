@@ -4,7 +4,7 @@ from django.contrib.auth.hashers import make_password, check_password
 class AuthSystem:
     def validate_credentials(self, username, password):
         # Validate user credentials
-        pass
+        return True
 
     def validate_token(self, token):
         # Validate user token

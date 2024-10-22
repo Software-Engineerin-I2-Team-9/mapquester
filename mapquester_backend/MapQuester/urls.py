@@ -18,8 +18,8 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('users/', include('users.urls')),
-    path('pois/', include('pois.urls'))
-#     path('map/', include('mapView.urls')), # TODO: mapViews will be a subset of pois
+    path('api/v1/users/', include('users.urls')),
+    path('api/v1/pois/', include('pois.urls'))
+#     path('apis/map/', include('mapView.urls')), # TODO: mapViews will be a subset of pois
 #     path('filters/', include('filters.urls')), # TODO: filters will be a subset of pois
 ]
