@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
+from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout, get_user_model
 from django.contrib import messages
 from .models import User
 from .auth_system import AuthSystem
@@ -8,42 +8,30 @@ from django.contrib.auth.decorators import login_required
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from django.core.exceptions import ValidationError
+from django.conf import settings
 
 
-# Register View
+# Register View\
 @api_view(['POST']) 
 def signup(request):
     form = UserRegisterForm(request.data)
     if form.is_valid():
-        form.save()
-        username = form.cleaned_data.get('username')
-        return Response({'message': f'Account created for {username}!'}, status=status.HTTP_201_CREATED)
+        user = form.save()
+        return Response({'message': f'Account created for {user.username}!'}, status=status.HTTP_201_CREATED)
     return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Login View
 @api_view(['POST'])
 def login(request):
-    form = UserLoginForm(request, data=request.data)
-    print(request.data)
+    form = UserLoginForm(data=request.data)
     if form.is_valid():
-        username = form.cleaned_data.get('username')
-        password = form.cleaned_data.get('password')
-        user = authenticate(username=username, password=password)
-        if user is not None:
-            auth_login(request, user)
-            return Response({'message': f'Welcome back, {username}!'}, status=status.HTTP_200_OK)
-        else:
-            return Response({'error': 'Invalid credentials. Please check your username and password.'}, status=status.HTTP_401_UNAUTHORIZED)
+        user = form.get_user()
+        auth_login(request, user)
+        return Response({'message': f'Welcome back, {user.username}!'}, status=status.HTTP_200_OK)
     else:
-        # Add more detailed error handling
-        errors = {}
-        for field, error_list in form.errors.items():
-            errors[field] = error_list[0]  # Get the first error message for each field
-        
         return Response({
-            'error': 'Login failed.',
-            'details': errors
+            'error': 'Authentication failed',
+            'form_errors': form.errors
         }, status=status.HTTP_400_BAD_REQUEST)
 
 # Edit Profile View
