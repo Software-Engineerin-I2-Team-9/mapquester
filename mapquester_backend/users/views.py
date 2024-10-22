@@ -5,9 +5,11 @@ from .models import User
 from .auth_system import AuthSystem
 from .forms import UserRegisterForm, UserLoginForm
 from django.contrib.auth.decorators import login_required
+from rest_framework.decorators import api_view
 
 
 # Register View
+@api_view(['POST']) 
 def register(request):
     if request.method == 'POST':
         form = UserRegisterForm(request.POST)
@@ -21,6 +23,7 @@ def register(request):
     return render(request, 'users/register.html', {'form': form})
 
 # Login View
+@api_view(['POST'])
 def login(request):
     if request.method == 'POST':
         form = UserLoginForm(request, data=request.POST)
@@ -42,6 +45,7 @@ def login(request):
 
 # Edit Profile View
 @login_required
+@api_view(['POST'])
 def edit_profile(request):
     if request.method == 'POST':
         user = request.user
@@ -57,6 +61,7 @@ def edit_profile(request):
 
 # Delete Account View
 @login_required
+@api_view(['POST'])
 def delete_account(request):
     if request.method == 'POST':
         user = request.user
