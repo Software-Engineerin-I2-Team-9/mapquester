@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react';
-import 'axios';
+import axios from 'axios';
 
 interface SignupFormProps {
   onSignup: () => void;
@@ -26,17 +26,27 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup }) => {
     setIsLoading(true);
 
     try {
-    const response = await axios.post(`${process.env.DEV === 'true' ? process.env.BACKEND_DEV_URL : process.env.BACKEND_PROD_URL}/api/signup/`, {
+    const endpoint = `${process.env.NEXT_PUBLIC_DEV === 'true' ? process.env.NEXT_PUBLIC_BACKEND_DEV_URL : process.env.NEXT_PUBLIC_BACKEND_PROD_URL}/api/v1/users/signup/`
+    const response = await axios.post(endpoint, {
       username: form.username,
       email: form.email,
       password1: form.password,
       password2: form.confirmPassword,
+    },{
+      headers: {
+        'Content-Type': 'application/json',
+      }
     });
         setMessage(response.data.message);
         onSignup();
       } catch (error) {
-        const errorMessage = error.response?.data?.message || 'An error occurred during registration';
-        setMessage(`Error: ${errorMessage}`);
+        const errorMessage = error.response?.data?.form_errors
+        ? Object.entries(error.response.data.form_errors).map(([field, messages]) => {
+              return `${field}: ${messages.join(', ')}`;
+          }).join('\n')
+        : error.response?.data?.message || 'An error occurred during sign up';
+    
+        alert(errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -55,6 +65,19 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup }) => {
             value={form.username}
             onChange={handleInputChange}
             placeholder="Username"
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-700 focus:outline-none focus:border-blue-500"
+          />
+        </div>
+        <div>
+          <label htmlFor="email" className="sr-only">Email</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            value={form.email}
+            onChange={handleInputChange}
+            placeholder="Email"
             required
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-700 focus:outline-none focus:border-blue-500"
           />

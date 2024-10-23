@@ -11,14 +11,18 @@ from rest_framework import status
 from django.conf import settings
 
 
-# Register View\
+# Register View
 @api_view(['POST']) 
 def signup(request):
     form = UserRegisterForm(request.data)
     if form.is_valid():
         user = form.save()
         return Response({'message': f'Account created for {user.username}!'}, status=status.HTTP_201_CREATED)
-    return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
+    print(form.errors)
+    return Response({
+            'error': 'Registration failed',
+            'form_errors': form.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 # Login View
 @api_view(['POST'])
@@ -29,6 +33,7 @@ def login(request):
         auth_login(request, user)
         return Response({'message': f'Welcome back, {user.username}!'}, status=status.HTTP_200_OK)
     else:
+        
         return Response({
             'error': 'Authentication failed',
             'form_errors': form.errors

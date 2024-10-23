@@ -31,15 +31,26 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onSignup }) => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(`${process.env.DEV === 'true' ? process.env.BACKEND_DEV_URL : process.env.BACKEND_PROD_URL}/api/login/`, {
+      const endpoint = `${process.env.NEXT_PUBLIC_DEV === 'true' ? process.env.NEXT_PUBLIC_BACKEND_DEV_URL : process.env.NEXT_PUBLIC_BACKEND_PROD_URL}/api/v1/users/login/`
+      console.log(endpoint)
+      const response = await axios.post(endpoint, {
         username: form.username,
         password: form.password,
+      },{
+        headers: {
+          'Content-Type': 'application/json',
+        }
       });
       setMessage(response.data.message);
       onLogin(form.username, form.password);
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'An error occurred during log in';
-      setMessage(`Error: ${errorMessage}`);
+      const errorMessage = error.response?.data?.form_errors
+        ? Object.entries(error.response.data.form_errors).map(([field, messages]) => {
+              return `${field}: ${messages.join(', ')}`;
+          }).join('\n')
+        : error.response?.data?.message || 'An error occurred during log in';
+    
+      alert(errorMessage);
     } finally {
       setIsLoading(false);
     }
