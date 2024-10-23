@@ -8,7 +8,7 @@ interface SignupFormProps {
 }
 
 const SignupForm: React.FC<SignupFormProps> = ({ onSignup }) => {
-  const [form, setForm] = useState({ username: '', password: '', confirmPassword: '' });
+  const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '' });
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -28,7 +28,9 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup }) => {
     try {
     const response = await axios.post(`${process.env.DEV === 'true' ? process.env.BACKEND_DEV_URL : process.env.BACKEND_PROD_URL}/api/signup/`, {
       username: form.username,
-      password: form.password,
+      email: form.email,
+      password1: form.password,
+      password2: form.confirmPassword,
     });
         setMessage(response.data.message);
         onSignup();
