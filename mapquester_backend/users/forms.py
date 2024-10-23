@@ -12,6 +12,8 @@ class UserRegisterForm(UserCreationForm):
 
 # User Login Form
 class UserLoginForm(AuthenticationForm):
-    class Meta:
-        model = User
-        fields = ['username', 'password']
+    username = forms.CharField(widget=forms.TextInput(attrs={'autofocus': True}))
+    password = forms.CharField(
+        strip=False,
+        widget=forms.PasswordInput(attrs={'autocomplete': 'current-password'}),
+    )

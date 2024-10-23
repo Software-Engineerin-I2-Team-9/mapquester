@@ -2,10 +2,13 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 class User(AbstractUser):
-    profile_info = models.TextField(blank=True, null=True)
-    id = models.AutoField(primary_key=True)
+    # Add any custom fields here
+    profile_info = models.TextField(blank=True)
 
-     # Override groups and user_permissions to avoid conflicts
+    def __str__(self):
+        return self.username
+
+    # Override groups and user_permissions to avoid conflicts
     groups = models.ManyToManyField(
         'auth.Group',
         related_name='custom_user_groups',
