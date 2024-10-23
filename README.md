@@ -48,3 +48,13 @@ MapQuester is an innovative platform for creating and sharing personalized maps 
    python manage.py migrate
    ```
 
+## Docker
+Note: in base directory
+1. Start service
+   ```
+   docker-compose -f docker-compose.dev.yml up --build
+   ```
+2. Stop service
+   ```
+   docker-compose -f docker-compose.dev.yml down
+   ```

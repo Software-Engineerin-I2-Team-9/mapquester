@@ -1,0 +1,25 @@
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+
+# Django migration files
+*.sqlite3
+*.log
+
+# Local development files
+*.local
+*.env
+
+# IDE files
+.idea/
+.vscode/
+.DS_Store
+
+# Git files
+.git/
+.gitignore
+
+# Other unnecessary files
+*.egg-info/
+dist/
+build/
