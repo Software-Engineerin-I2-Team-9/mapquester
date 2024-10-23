@@ -9,8 +9,8 @@ interface SignupFormProps {
 
 const SignupForm: React.FC<SignupFormProps> = ({ onSignup }) => {
   const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '' });
-  const [message, setMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [, setMessage] = useState('');
+  const [, setIsLoading] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -40,12 +40,13 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup }) => {
         setMessage(response.data.message);
         onSignup();
       } catch (error) {
-        const errorMessage = error.response?.data?.form_errors
-        ? Object.entries(error.response.data.form_errors).map(([field, messages]) => {
+        const axiosError = error as { response?: { data?: { form_errors?: Record<string, string[]>, message?: string } } };
+        const errorMessage = axiosError.response?.data?.form_errors
+          ? Object.entries(axiosError.response.data.form_errors).map(([field, messages]) => {
               return `${field}: ${messages.join(', ')}`;
-          }).join('\n')
-        : error.response?.data?.message || 'An error occurred during sign up';
-    
+            }).join('\n')
+          : axiosError.response?.data?.message || 'An error occurred during sign up';
+        
         alert(errorMessage);
       } finally {
         setIsLoading(false);

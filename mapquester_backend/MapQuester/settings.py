@@ -66,7 +66,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",  # Next.js app running locally
 ]
 
-ROOT_URLCONF = 'MapQuester.urls'
+ROOT_URLCONF = 'mapquester.urls'
 
 TEMPLATES = [
     {
@@ -84,7 +84,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'MapQuester.wsgi.application'
+WSGI_APPLICATION = 'mapquester.wsgi.application'
 
 
 # Database

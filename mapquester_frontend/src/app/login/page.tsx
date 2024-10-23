@@ -7,9 +7,9 @@ import LoginForm from './_components/LoginForm';
 
 const Login = () => {
   const router = useRouter();
-  const [auth, setAuth] = useRecoilState(authState);
+  const [, setAuth] = useRecoilState(authState);
 
-  const handleLogin = (username: string, password: string) => {
+  const handleLogin = (username: string) => {
     setAuth({ isLoggedIn: true, username }); // set login state in Recoil
     router.push('/'); // redirect after login
   };

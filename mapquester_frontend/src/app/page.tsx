@@ -3,30 +3,38 @@
 import { useRouter } from 'next/navigation';
 import { useRecoilValue } from 'recoil';
 import { authState } from './atoms/authState';
+import MapComponent from './map/_components/MapComponent';
 
 const Home = () => {
   const router = useRouter();
-  const auth = useRecoilValue(authState); // access login state
+  const auth = useRecoilValue(authState);
 
   const handleLoginRedirect = () => {
     router.push('/login');
   };
 
   return (
-    <main className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
-      {auth.isLoggedIn ? (
-        <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">Welcome to MapQuester, {auth.username}.</h1>
-        <p className="text-center text-gray-600">You are now logged in!</p>
+    <main className="min-h-screen bg-gradient-to-br from-blue-900 to-indigo-900">
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="container mx-auto px-4 py-8">
+          {auth.isLoggedIn ? (
+            <div className="w-full h-[80vh] p-4 bg-blue-800/30 backdrop-blur-md rounded-lg shadow-xl flex items-center justify-center">
+              <MapComponent />
+            </div>
+          ) : (
+            <div className="text-center bg-white/10 backdrop-blur-lg p-8 rounded-xl shadow-2xl mx-auto max-w-md">
+              <h1 className="text-6xl font-bold text-white mb-4">MapQuester</h1>
+              <p className="text-xl text-blue-100 mb-8">Pin, Share, and Discover Hobbies</p>
+              <button
+                onClick={handleLoginRedirect}
+                className="py-3 px-8 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full transition duration-300 shadow-lg"
+              >
+                Get Started
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-      ) : (
-        <button
-          onClick={handleLoginRedirect}
-          className="py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-md transition duration-300"
-        >
-          Go to Login
-        </button>
-      )}
     </main>
   );
 };

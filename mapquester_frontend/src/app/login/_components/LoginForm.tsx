@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useRecoilState } from 'recoil';
-import { authState } from '@/app/atoms/authState';
+// import { useRouter } from 'next/navigation';
+// import { useRecoilState } from 'recoil';
+// import { authState } from '@/app/atoms/authState';
 import axios from 'axios';
 
 interface LoginFormProps {
@@ -44,11 +44,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onSignup }) => {
       setMessage(response.data.message);
       onLogin(form.username, form.password);
     } catch (error) {
-      const errorMessage = error.response?.data?.form_errors
-        ? Object.entries(error.response.data.form_errors).map(([field, messages]) => {
+      const axiosError = error as { response?: { data?: { form_errors?: Record<string, string[]>, message?: string } } };
+      const errorMessage = axiosError.response?.data?.form_errors
+        ? Object.entries(axiosError.response.data.form_errors).map(([field, messages]) => {
               return `${field}: ${messages.join(', ')}`;
           }).join('\n')
-        : error.response?.data?.message || 'An error occurred during log in';
+        : axiosError.response?.data?.message || 'An error occurred during log in';
     
       alert(errorMessage);
     } finally {
