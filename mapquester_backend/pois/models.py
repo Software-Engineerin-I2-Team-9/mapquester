@@ -1,12 +1,16 @@
+from django.contrib.auth import get_user_model
 from django.db import models
-from users.models import User
+#from users.models import User
+User = get_user_model()
+
 
 class POI(models.Model):
     id = models.AutoField(primary_key=True)
-    userId = models.ForeignKey(User, on_delete=models.CASCADE)
+    userId = models.ForeignKey(User, on_delete=models.CASCADE,null=True, blank=True)
     name = models.CharField(max_length=255)
     description = models.TextField()
     category = models.CharField(max_length=100)
+    isActive = models.BooleanField(default=True)
     coordinates = models.CharField(max_length=500)
     attachments = models.FileField(upload_to='attachments/', blank=True, null=True)
 
