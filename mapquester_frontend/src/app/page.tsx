@@ -17,7 +17,7 @@ const Home = () => {
     <main className="min-h-screen bg-gradient-to-br from-blue-900 to-indigo-900">
       <div className="min-h-screen flex items-center justify-center">
         <div className="container mx-auto px-4 py-8">
-          {auth.isLoggedIn ? (
+          {(auth.isLoggedIn || process.env.NEXT_PUBLIC_DEV_NO_AUTH==='true') ? (
             <div className="w-full h-[80vh] p-4 bg-blue-800/30 backdrop-blur-md rounded-lg shadow-xl flex items-center justify-center">
               <MapComponent />
             </div>
