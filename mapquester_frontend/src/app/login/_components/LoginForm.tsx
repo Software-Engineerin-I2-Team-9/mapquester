@@ -32,6 +32,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onSignup }) => {
 
     try {
       const endpoint = `${process.env.NEXT_PUBLIC_DEV === 'true' ? process.env.NEXT_PUBLIC_BACKEND_DEV_URL : process.env.NEXT_PUBLIC_BACKEND_PROD_URL}/api/v1/users/login/`
+      // eslint-disable-next-line no-console
       console.log(endpoint)
       const response = await axios.post(endpoint, {
         username: form.username,
