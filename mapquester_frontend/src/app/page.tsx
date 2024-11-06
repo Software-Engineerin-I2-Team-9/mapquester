@@ -1,13 +1,26 @@
 'use client'
 
 import { useRouter } from 'next/navigation';
-import { useRecoilValue } from 'recoil';
+import { useRecoilState } from 'recoil';
 import { authState } from './atoms/authState';
 import MapComponent from './map/_components/MapComponent';
+import { useEffect } from 'react';
+import LogoutButton from './login/_components/LogoutButton';
 
 const Home = () => {
   const router = useRouter();
-  const auth = useRecoilValue(authState);
+  const [auth, setAuth] = useRecoilState(authState);
+
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      setAuth((prevAuth) => ({
+        ...prevAuth,
+        isLoggedIn: true,
+        accessToken: token
+      }));
+    }
+  }, [setAuth]);
 
   const handleLoginRedirect = () => {
     router.push('/login');
@@ -15,6 +28,21 @@ const Home = () => {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-900 to-indigo-900">
+      <nav className="fixed top-0 left-0 right-0 bg-white/10 backdrop-blur-md shadow-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16 items-center">
+            <div className="flex-shrink-0">
+              <h1 className="text-2xl font-bold text-white">MapQuester</h1>
+            </div>
+            {auth.isLoggedIn && (
+              <div>
+                <LogoutButton/>
+              </div>
+            )}
+          </div>
+        </div>
+      </nav>
+
       <div className="min-h-screen flex items-center justify-center">
         <div className="container mx-auto px-4 py-8">
           {(auth.isLoggedIn || process.env.NEXT_PUBLIC_DEV_NO_AUTH==='true') ? (
