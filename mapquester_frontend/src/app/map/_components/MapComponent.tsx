@@ -9,14 +9,15 @@ interface Point {
   longitude: number;
   latitude: number;
   description: string;
+  tag: string;
 }
 
 const initialPoints: Point[] = [
-  { name: 'Tandon School of Engineering', longitude: -73.9862, latitude: 40.6942, description: 'NYU\'s engineering and applied sciences campus in Brooklyn.' },
-  { name: 'Brooklyn Bridge', longitude: -73.9969, latitude: 40.7061, description: 'An iconic suspension bridge connecting Manhattan and Brooklyn.' },
-  { name: 'DUMBO', longitude: -73.9877, latitude: 40.7033, description: 'A trendy neighborhood known for its cobblestone streets and artistic atmosphere.' },
-  { name: 'Prospect Park', longitude: -73.9701, latitude: 40.6602, description: 'A 526-acre urban oasis featuring diverse landscapes and recreational activities.' },
-  { name: 'NYU Manhattan Campus', longitude: -73.9965, latitude: 40.7295, description: 'The main campus of New York University, located in Greenwich Village.' },
+  { name: 'Tandon School of Engineering', longitude: -73.9862, latitude: 40.6942, description: 'NYU\'s engineering and applied sciences campus in Brooklyn.', tag: 'school' },
+  { name: 'Brooklyn Bridge', longitude: -73.9969, latitude: 40.7061, description: 'An iconic suspension bridge connecting Manhattan and Brooklyn.', tag: 'scenery' },
+  { name: 'DUMBO', longitude: -73.9877, latitude: 40.7033, description: 'A trendy neighborhood known for its cobblestone streets and artistic atmosphere.', tag: 'scenery' },
+  { name: 'Prospect Park', longitude: -73.9701, latitude: 40.6602, description: 'A 526-acre urban oasis featuring diverse landscapes and recreational activities.', tag: 'scenery' },
+  { name: 'NYU Manhattan Campus', longitude: -73.9965, latitude: 40.7295, description: 'The main campus of New York University, located in Greenwich Village.', tag: 'school' },
 ];
 
 const MapComponent: React.FC = () => {
@@ -26,7 +27,14 @@ const MapComponent: React.FC = () => {
   const [currViewState, setCurrViewState] = useState<ViewState | null>(null);
   const [newlyCreatedPoint, setNewlyCreatedPoint] = useState<Point | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [selectedTag, setSelectedTag] = useState<string>('all');
   const mapRef = useRef<MapRef>(null);
+
+  const filteredPoints = selectedTag === 'all' 
+    ? points 
+    : points.filter(point => point.tag === selectedTag);
+
+  const uniqueTags = ['all', ...Array.from(new Set(points.map(point => point.tag)))];
 
   const handleMapClick = useCallback((event: MapMouseEvent) => {
     const { lngLat } = event;
@@ -45,11 +53,13 @@ const MapComponent: React.FC = () => {
         latitude: newPoint.latitude!,
         longitude: newPoint.longitude!,
         description: newPoint.description,
+        tag: newPoint.tag || '',
       };
       setPoints([...points, createdPoint]);
       setNewPoint(null);
       setSelectedPoint(createdPoint);
       setNewlyCreatedPoint(createdPoint);
+      setSelectedTag('all');
 
       // Center the map on the new point
       mapRef.current?.flyTo({
@@ -67,6 +77,8 @@ const MapComponent: React.FC = () => {
     setPoints(prevPoints => prevPoints.filter(point => point !== pointToDelete));
     if (selectedPoint === pointToDelete) {
       setSelectedPoint(null);
+      setSelectedTag('all');
+
     }
   }, [selectedPoint]);
 
@@ -81,6 +93,7 @@ const MapComponent: React.FC = () => {
       setPoints(updatedPoints);
       setSelectedPoint(null);
       setIsUpdating(false);
+      setSelectedTag('all');
     }
   };
 
@@ -99,6 +112,21 @@ const MapComponent: React.FC = () => {
     <div className="w-full max-w-6xl bg-gray-900 p-6 rounded-lg">
       <h2 className="text-2xl font-bold text-gray-100 mb-4">Explore POIs</h2>
       <p className="text-gray-300 mb-6">Discover Points of Interest around New York City</p>
+      <div className="mb-4">
+        <label htmlFor="tag-filter" className="text-gray-300 mr-2">Filter by Tag:</label>
+        <select
+          id="tag-filter"
+          value={selectedTag}
+          onChange={(e) => setSelectedTag(e.target.value)}
+          className="bg-gray-700 text-white rounded px-2 py-1"
+        >
+          {uniqueTags.map((tag) => (
+            <option key={tag} value={tag}>
+              {tag.charAt(0).toUpperCase() + tag.slice(1)}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="flex flex-col md:flex-row gap-6">
         <div className="w-full md:w-1/2 h-[400px] rounded-lg overflow-hidden shadow-lg">
           <Map
@@ -114,7 +142,7 @@ const MapComponent: React.FC = () => {
             style={{width: '100%', height: '100%'}}
             mapStyle="mapbox://styles/mapbox/dark-v10"
           >
-            {points.map((point, index) => (
+            {filteredPoints.map((point, index) => (
               <Marker
                 key={index}
                 longitude={point.longitude}
@@ -160,6 +188,7 @@ const MapComponent: React.FC = () => {
               <>
                 <h3 className="text-xl font-semibold text-gray-100 mb-3">{selectedPoint.name}</h3>
                 <p className="text-gray-300 mb-4">{selectedPoint.description}</p>
+                <p className="text-gray-300 mb-4">Tag: {selectedPoint.tag}</p>
                 <div className="flex space-x-2">
                   <button 
                     onClick={() => setIsUpdating(true)}

@@ -5,6 +5,7 @@ interface Point {
   longitude: number;
   latitude: number;
   description: string;
+  tag: string;
 }
 
 interface POIFormProps {
@@ -46,6 +47,16 @@ const POIForm: React.FC<POIFormProps> = ({ newPoint, onSubmit, onChange }) => {
             id="longitude"
             value={newPoint.longitude}
             readOnly
+            className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white"
+          />
+        </div>
+        <div>
+          <label htmlFor="tag" className="block text-sm font-medium text-gray-300">Tag</label>
+          <input
+            type="text"
+            id="tag"
+            value={newPoint.tag || ''}
+            onChange={(e) => onChange('tag', e.target.value)}
             className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white"
           />
         </div>
