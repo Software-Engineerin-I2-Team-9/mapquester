@@ -1,5 +1,6 @@
 from django.db import models
 
+
 # Create your models here.
 class MapView:
     def show_pois_on_maps(self):

@@ -1,5 +1,7 @@
 from django.db import models
+
 from users.models import User
+
 
 class POI(models.Model):
     id = models.AutoField(primary_key=True)
@@ -8,7 +10,7 @@ class POI(models.Model):
     description = models.TextField()
     category = models.CharField(max_length=100)
     coordinates = models.CharField(max_length=500)
-    attachments = models.FileField(upload_to='attachments/', blank=True, null=True)
+    attachments = models.FileField(upload_to="attachments/", blank=True, null=True)
 
     def create_poi(self):
         # Logic to create POI
@@ -21,6 +23,7 @@ class POI(models.Model):
     def delete_poi(self):
         # Logic to delete POI
         pass
+
 
 class PoiManager(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
