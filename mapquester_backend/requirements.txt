@@ -7,3 +7,4 @@ python-dotenv==1.0.1
 sqlparse==0.5.1
 typing_extensions==4.12.2
 django-cors-headers==4.5.0
+djangorestframework-simplejwt==5.3.1
