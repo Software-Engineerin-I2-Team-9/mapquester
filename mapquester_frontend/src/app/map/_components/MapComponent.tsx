@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import Map, { Marker, ViewState, MapRef, MapMouseEvent } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import POIForm from './POIForm';
+import UpdatePOIForm from './UpdatePOIForm';
 
 interface Point {
   name: string;
@@ -24,6 +25,7 @@ const MapComponent: React.FC = () => {
   const [newPoint, setNewPoint] = useState<Partial<Point> | null>(null);
   const [currViewState, setCurrViewState] = useState<ViewState | null>(null);
   const [newlyCreatedPoint, setNewlyCreatedPoint] = useState<Point | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
   const mapRef = useRef<MapRef>(null);
 
   const handleMapClick = useCallback((event: MapMouseEvent) => {
@@ -58,6 +60,34 @@ const MapComponent: React.FC = () => {
 
       // Clear the newly created point highlight after 3 seconds
       setTimeout(() => setNewlyCreatedPoint(null), 3000);
+    }
+  };
+
+  const deletePoint = useCallback((pointToDelete: Point) => {
+    setPoints(prevPoints => prevPoints.filter(point => point !== pointToDelete));
+    if (selectedPoint === pointToDelete) {
+      setSelectedPoint(null);
+    }
+  }, [selectedPoint]);
+
+  const handleUpdateSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (selectedPoint) {
+      const updatedPoints = points.map(point => 
+        point.longitude === selectedPoint.longitude && point.latitude === selectedPoint.latitude
+          ? { ...selectedPoint }
+          : point
+      );
+      setPoints(updatedPoints);
+      setSelectedPoint(null);
+      setIsUpdating(false);
+    }
+  };
+
+  const handleUpdateChange = (field: keyof Point, value: string) => {
+    if (selectedPoint) {
+      const updatedPoint = { ...selectedPoint, [field]: value };
+      setSelectedPoint(updatedPoint);
     }
   };
 
@@ -113,17 +143,39 @@ const MapComponent: React.FC = () => {
         </div>
         <div className="w-full md:w-1/2 bg-gray-800 p-4 rounded-lg shadow-lg">
           {newPoint ? (
-
             <POIForm
               newPoint={newPoint}
               onSubmit={handleFormSubmit}
               onChange={handleFormChange}
             />
           ) : selectedPoint ? (
-            <>
-              <h3 className="text-xl font-semibold text-gray-100 mb-3">{selectedPoint.name}</h3>
-              <p className="text-gray-300">{selectedPoint.description}</p>
-            </>
+            isUpdating ? (
+              <UpdatePOIForm
+                point={selectedPoint}
+                onSubmit={handleUpdateSubmit}
+                onChange={handleUpdateChange}
+                onCancel={() => setIsUpdating(false)}
+              />
+            ) : (
+              <>
+                <h3 className="text-xl font-semibold text-gray-100 mb-3">{selectedPoint.name}</h3>
+                <p className="text-gray-300 mb-4">{selectedPoint.description}</p>
+                <div className="flex space-x-2">
+                  <button 
+                    onClick={() => setIsUpdating(true)}
+                    className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                  >
+                    Update
+                  </button>
+                  <button 
+                    onClick={() => deletePoint(selectedPoint)}
+                    className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </>
+            )
           ) : (
             <>
               <h3 className="text-xl font-semibold text-gray-100 mb-3">About This Map</h3>
