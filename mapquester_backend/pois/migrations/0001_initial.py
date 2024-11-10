@@ -12,18 +12,37 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="POI",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("name", models.CharField(max_length=255)),
                 ("description", models.TextField()),
                 ("category", models.CharField(max_length=100)),
                 ("coordinates", models.CharField(max_length=50)),
-                ("attachments", models.FileField(blank=True, null=True, upload_to="attachments/")),
+                (
+                    "attachments",
+                    models.FileField(blank=True, null=True, upload_to="attachments/"),
+                ),
             ],
         ),
         migrations.CreateModel(
             name="PoiManager",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
             ],
         ),
     ]

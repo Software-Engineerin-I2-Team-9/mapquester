@@ -43,7 +43,11 @@ def toggle_layers(request):
             pass
 
         # Provide feedback to the user (can be used with JavaScript on the frontend)
-        return render(request, "map_view/toggle_layers.html", {"status": "Layer toggled successfully."})
+        return render(
+            request,
+            "map_view/toggle_layers.html",
+            {"status": "Layer toggled successfully."},
+        )
 
     # Render the template with available layers for toggling
     return render(request, "map_view/toggle_layers.html")

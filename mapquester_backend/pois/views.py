@@ -17,7 +17,11 @@ def create_poi(request):
 
         # Create POI instance
         poi = POI(
-            name=name, description=description, category=category, coordinates=coordinates, attachments=attachments
+            name=name,
+            description=description,
+            category=category,
+            coordinates=coordinates,
+            attachments=attachments,
         )
         poi.save()
 

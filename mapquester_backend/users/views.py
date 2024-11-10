@@ -20,9 +20,15 @@ def signup(request):
     form = UserRegisterForm(request.data)
     if form.is_valid():
         user = form.save()
-        return Response({"message": f"Account created for {user.username}!"}, status=status.HTTP_201_CREATED)
+        return Response(
+            {"message": f"Account created for {user.username}!"},
+            status=status.HTTP_201_CREATED,
+        )
     print(form.errors)
-    return Response({"error": "Registration failed", "form_errors": form.errors}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(
+        {"error": "Registration failed", "form_errors": form.errors},
+        status=status.HTTP_400_BAD_REQUEST,
+    )
 
 
 # Login View
@@ -32,10 +38,13 @@ def login(request):
     if form.is_valid():
         user = form.get_user()
         auth_login(request, user)
-        return Response({"message": f"Welcome back, {user.username}!"}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": f"Welcome back, {user.username}!"}, status=status.HTTP_200_OK
+        )
     else:
         return Response(
-            {"error": "Authentication failed", "form_errors": form.errors}, status=status.HTTP_400_BAD_REQUEST
+            {"error": "Authentication failed", "form_errors": form.errors},
+            status=status.HTTP_400_BAD_REQUEST,
         )
 
 
@@ -49,7 +58,10 @@ def edit_profile(request):
     user.profile_info = request.data.get("profile_info", user.profile_info)
 
     user.save()
-    return Response({"message": "Your profile has been updated successfully."}, status=status.HTTP_200_OK)
+    return Response(
+        {"message": "Your profile has been updated successfully."},
+        status=status.HTTP_200_OK,
+    )
 
 
 # Delete Account View
@@ -58,4 +70,7 @@ def edit_profile(request):
 def delete_account(request):
     user = request.user
     user.delete()
-    return Response({"message": "Your account has been deleted successfully."}, status=status.HTTP_200_OK)
+    return Response(
+        {"message": "Your account has been deleted successfully."},
+        status=status.HTTP_200_OK,
+    )
