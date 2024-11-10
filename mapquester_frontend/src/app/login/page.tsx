@@ -1,3 +1,5 @@
+// page.tsx
+
 'use client'
 
 import { useRouter } from 'next/navigation';
@@ -9,8 +11,16 @@ const Login = () => {
   const router = useRouter();
   const [, setAuth] = useRecoilState(authState);
 
-  const handleLogin = (username: string) => {
-    setAuth({ isLoggedIn: true, username }); // set login state in Recoil
+  const handleLogin = (accessToken: string, refreshToken: string) => {
+    setAuth({
+      isLoggedIn: true,
+      accessToken,
+      refreshToken,
+    }); // set login state in Recoil
+
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+
     router.push('/'); // redirect after login
   };
 

@@ -1,13 +1,10 @@
 'use client'
 
 import { useState } from 'react';
-// import { useRouter } from 'next/navigation';
-// import { useRecoilState } from 'recoil';
-// import { authState } from '@/app/atoms/authState';
-import axios from 'axios';
+import apiClient from '@/app/api/axios';
 
 interface LoginFormProps {
-  onLogin: (username: string, password: string) => void;
+  onLogin: (accessToken: string, refreshToken: string) => void;
   onSignup: () => void;
 }
 
@@ -24,35 +21,36 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onSignup }) => {
     e.preventDefault();
 
     if (!form.username || !form.password) {
-      alert('Please enter both username and password');
+      setMessage('Please enter both username and password');
       return;
     }
 
     setIsLoading(true);
 
     try {
+<<<<<<< HEAD
       const endpoint = `${process.env.NEXT_PUBLIC_DEV === 'true' ? process.env.NEXT_PUBLIC_BACKEND_DEV_URL : process.env.NEXT_PUBLIC_BACKEND_PROD_URL}/api/v1/users/login/`
       // eslint-disable-next-line no-console
       console.log(endpoint)
       const response = await axios.post(endpoint, {
+=======
+      const endpoint = '/api/v1/users/login/'
+      const response = await apiClient.post(endpoint, {
+>>>>>>> dev
         username: form.username,
         password: form.password,
-      },{
+      }, {
         headers: {
           'Content-Type': 'application/json',
         }
       });
+
       setMessage(response.data.message);
-      onLogin(form.username, form.password);
+      onLogin(response.data.access, response.data.refresh);
     } catch (error) {
-      const axiosError = error as { response?: { data?: { form_errors?: Record<string, string[]>, message?: string } } };
-      const errorMessage = axiosError.response?.data?.form_errors
-        ? Object.entries(axiosError.response.data.form_errors).map(([field, messages]) => {
-              return `${field}: ${messages.join(', ')}`;
-          }).join('\n')
-        : axiosError.response?.data?.message || 'An error occurred during log in';
-    
-      alert(errorMessage);
+      const axiosError = error as { response?: { data?: { error?: string, detail?: string } } };
+      const errorMessage = axiosError.response?.data?.error || axiosError.response?.data?.detail || 'An error occurred during log in';
+      setMessage(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -108,4 +106,4 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onSignup }) => {
   );
 };
 
-export default LoginForm
+export default LoginForm;

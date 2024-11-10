@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react';
-import axios from 'axios';
+import apiClient from '@/app/api/axios';
 
 interface SignupFormProps {
   onSignup: () => void;
@@ -26,8 +26,8 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup }) => {
     setIsLoading(true);
 
     try {
-    const endpoint = `${process.env.NEXT_PUBLIC_DEV === 'true' ? process.env.NEXT_PUBLIC_BACKEND_DEV_URL : process.env.NEXT_PUBLIC_BACKEND_PROD_URL}/api/v1/users/signup/`
-    const response = await axios.post(endpoint, {
+    const endpoint = '/api/v1/users/signup/'
+    const response = await apiClient.post(endpoint, {
       username: form.username,
       email: form.email,
       password1: form.password,
