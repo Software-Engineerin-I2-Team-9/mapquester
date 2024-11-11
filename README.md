@@ -58,3 +58,29 @@ Note: in base directory
    ```
    docker-compose -f docker-compose.dev.yml down
    ```
+
+## Code Quality and Testing
+
+### Backend
+```
+# Install tools
+pip install flake8 black
+
+# Format code
+black .
+
+# Check code quality
+flake8 .
+
+# Run tests
+python manage.py test
+```
+
+### Frontend
+```
+# Run linting
+npm run lint
+
+# Run tests
+npm run test
+```
