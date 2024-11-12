@@ -1,5 +1,7 @@
 from django.db import models
+
 from users.models import User
+
 
 class POI(models.Model):
     id = models.AutoField(primary_key=True)

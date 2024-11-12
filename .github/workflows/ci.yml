@@ -1,0 +1,30 @@
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches: [ main, dev ]
+  push:
+    branches: [ main, dev ]
+
+jobs:
+  frontend-lint:
+    name: Frontend Linting
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: mapquester_frontend/package-lock.json
+
+    - name: Install Frontend Dependencies
+      working-directory: mapquester_frontend
+      run: npm ci
+
+    - name: Run Frontend Linting
+      working-directory: mapquester_frontend
+      run: npm run lint

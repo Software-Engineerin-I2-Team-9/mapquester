@@ -6,7 +6,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -15,7 +14,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='POI',
+            name="POI",
             fields=[
                 ('id', models.AutoField(primary_key=True, serialize=False)),
                 ('latitude', models.DecimalField(decimal_places=6, max_digits=9)),
