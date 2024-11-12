@@ -6,9 +6,9 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     # Define the paths for POI management
-    path('create/', views.create_poi, name='create_poi'),
-    path('update/<int:poi_id>/', views.update_poi, name='update_poi'),
-    path('delete/<int:poi_id>/', views.delete_poi, name='delete_poi'),
+    path("create/", views.create_poi, name="create_poi"),
+    path("update/<int:poi_id>/", views.update_poi, name="update_poi"),
+    path("delete/<int:poi_id>/", views.delete_poi, name="delete_poi"),
 ]
 
 if settings.DEBUG:

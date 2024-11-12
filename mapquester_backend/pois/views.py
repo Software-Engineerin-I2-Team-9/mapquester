@@ -20,7 +20,7 @@ from users.models import User
 # )
 
 
-@api_view(['POST'])
+@api_view(["POST"])
 @parser_classes([MultiPartParser, JSONParser])  # Add MultiPartParser to handle files
 def create_poi(request):
     data = request.data
@@ -28,19 +28,22 @@ def create_poi(request):
 
     # Step 1: Extract and validate data
     try:
-        user = User.objects.get(id=data['userId'])
-        latitude = data['latitude']
-        longitude = data['longitude']
-        is_public = data.get('isPublic', 1)
-        is_deleted = data.get('isDeleted', 0)
-        title = data['title']
-        tag = data['tag']
-        description = data['description']
-        reactions = data.get('reactions', 0)
-        content_files = data['content']
+        user = User.objects.get(id=data["userId"])
+        latitude = data["latitude"]
+        longitude = data["longitude"]
+        is_public = data.get("isPublic", 1)
+        is_deleted = data.get("isDeleted", 0)
+        title = data["title"]
+        tag = data["tag"]
+        description = data["description"]
+        reactions = data.get("reactions", 0)
+        content_files = data["content"]
         print("Content: ", content_files)
     except KeyError as e:
-        return Response({"error": f"Missing required field: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"error": f"Missing required field: {str(e)}"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     # Step 2: Create POI entry in the database (initially with empty content field)
     poi = POI.objects.create(
@@ -53,7 +56,7 @@ def create_poi(request):
         tag=tag,
         description=description,
         reactions=reactions,
-        content=[]  # This will be updated after uploading files
+        content=[],  # This will be updated after uploading files
     )
 
     # Step 3: Upload files to S3 and collect URLs
@@ -104,12 +107,18 @@ def create_poi(request):
     poi.content = local_urls
     poi.save()
 
-    return Response({"message": "POI created successfully", "poi_id": poi.id, "content_urls": local_urls},
-                    status=status.HTTP_201_CREATED)
+    return Response(
+        {
+            "message": "POI created successfully",
+            "poi_id": poi.id,
+            "content_urls": local_urls,
+        },
+        status=status.HTTP_201_CREATED,
+    )
 
 
 # API to update POI's isPublic and reactions
-@api_view(['PATCH'])
+@api_view(["PATCH"])
 def update_poi(request, poi_id):
     try:
         poi = POI.objects.get(id=poi_id)
@@ -118,23 +127,29 @@ def update_poi(request, poi_id):
         return Response({"error": "POI not found"}, status=status.HTTP_404_NOT_FOUND)
 
     # Toggle isPublic if requested
-    if 'isPublic' in request.data:
-        poi.isPublic = request.data['isPublic']
+    if "isPublic" in request.data:
+        poi.isPublic = request.data["isPublic"]
 
     # Update reactions count if requested
-    if 'reactions_change' in request.data:
-        reactions_change = request.data['reactions_change']
+    if "reactions_change" in request.data:
+        reactions_change = request.data["reactions_change"]
         poi.reactions += reactions_change
         if poi.reactions < 0:
             poi.reactions = 0
 
     poi.save()
-    return Response({"message": "POI updated successfully", "isPublic": poi.isPublic, "reactions": poi.reactions},
-                    status=status.HTTP_200_OK)
+    return Response(
+        {
+            "message": "POI updated successfully",
+            "isPublic": poi.isPublic,
+            "reactions": poi.reactions,
+        },
+        status=status.HTTP_200_OK,
+    )
 
 
 # API to soft delete a POI
-@api_view(['PATCH'])
+@api_view(["PATCH"])
 def delete_poi(request, poi_id):
     try:
         poi = POI.objects.get(id=poi_id)
