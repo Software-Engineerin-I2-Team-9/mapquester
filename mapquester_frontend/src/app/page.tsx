@@ -27,8 +27,8 @@ const Home = () => {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-900 to-indigo-900">
-      <nav className="fixed top-0 left-0 right-0 bg-white/10 backdrop-blur-md shadow-md">
+    <main className="min-h-screen bg-gradient-to-r from-blue-900 to-purple-500">
+      <nav className="fixed top-0 left-0 right-0 bg-transparent">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex-shrink-0">
@@ -46,7 +46,7 @@ const Home = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="container mx-auto px-4 py-8">
           {(auth.isLoggedIn || process.env.NEXT_PUBLIC_DEV_NO_AUTH==='true') ? (
-            <div className="w-full h-[80vh] p-4 bg-blue-800/30 backdrop-blur-md rounded-lg shadow-xl flex items-center justify-center">
+            <div className="w-full h-[80vh] bg-white/10 p-4 backdrop-blur-md rounded-lg shadow-xl flex items-center justify-center">
               <MapComponent />
             </div>
           ) : (

@@ -7,6 +7,26 @@ import { Point } from '@/app/utils/types'
 import { capitalize } from '@/app/utils/fns';
 import { tagToColorMapping } from '@/app/utils/data';
 
+const ToggleSwitch: React.FC<{ isOn: boolean; onToggle: () => void }> = ({ isOn, onToggle }) => {
+  return (
+    <div className="flex items-center">
+      <span className="mr-2 text-gray-300">List View</span>
+      <div
+        className={`w-14 h-7 flex items-center rounded-full p-1 cursor-pointer ${
+          isOn ? 'bg-blue-500' : 'bg-gray-700'
+        }`}
+        onClick={onToggle}
+      >
+        <div
+          className={`bg-white w-5 h-5 rounded-full shadow-md transform duration-300 ease-in-out ${
+            isOn ? 'translate-x-7' : ''
+          }`}
+        />
+      </div>
+    </div>
+  );
+};
+
 const initialPoints: Point[] = [
   { name: 'Tandon School of Engineering', longitude: -73.9862, latitude: 40.6942, description: 'NYU\'s engineering and applied sciences campus in Brooklyn.', tag: 'school' },
   { name: 'Brooklyn Bridge', longitude: -73.9969, latitude: 40.7061, description: 'An iconic suspension bridge connecting Manhattan and Brooklyn.', tag: 'photo' },
@@ -24,6 +44,7 @@ const MapComponent: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string>('all');
   const [tempMarker, setTempMarker] = useState<{ longitude: number; latitude: number } | null>(null);
+  const [isMapView, setIsMapView] = useState(true);
   const mapRef = useRef<MapRef>(null);
 
   const filteredPoints = selectedTag === 'all' 
@@ -31,7 +52,10 @@ const MapComponent: React.FC = () => {
     : points.filter(point => point.tag === selectedTag);
 
   const uniqueTags = ['all', ...Array.from(new Set(points.map(point => point.tag)))];
-
+  
+  const toggleView = () => {
+    setIsMapView(!isMapView);
+  };
   const handleMapClick = useCallback((event: MapMouseEvent) => {
     const { lngLat } = event;
     setNewPoint({
@@ -112,28 +136,56 @@ const MapComponent: React.FC = () => {
     setNewPoint(prev => ({ ...prev, [field]: value }));
   };
 
+  const renderListView = () => (
+    <div className="w-full h-[400px] overflow-y-auto bg-gray-800 rounded-lg shadow-lg">
+      {filteredPoints.map((point, index) => (
+        <div key={index} className="p-4 mb-4 bg-gray-700 rounded-lg">
+          <h3 className="text-xl font-semibold text-gray-100 mb-2 flex items-center">
+          {point.name}
+          <span 
+            className="ml-2 inline-block w-3 h-3 rounded-full"
+            style={{ backgroundColor: tagToColorMapping[point.tag] }}
+          ></span>
+        </h3>
+          <p className="text-gray-300 mb-2">{point.description}</p>
+          <p className="text-gray-300">Tag: {capitalize(point.tag)}</p>
+          <button
+            onClick={() => setSelectedPoint(point)}
+            className="mt-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded"
+          >
+            View Details
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <div className="w-full max-w-6xl bg-gray-900 p-6 rounded-lg">
       <h2 className="text-2xl font-bold text-gray-100 mb-4">Explore POIs</h2>
       <p className="text-gray-300 mb-6">Discover Points of Interest around New York City</p>
-      <div className="mb-4">
-        <label htmlFor="tag-filter" className="text-gray-300 mr-2">Filter by Tag:</label>
-        <select
-          id="tag-filter"
-          value={selectedTag}
-          onChange={(e) => setSelectedTag(e.target.value)}
-          className="bg-gray-700 text-white rounded px-2 py-1"
-        >
-          {uniqueTags.map((tag) => (
-            <option key={tag} value={tag}>
-              {tag.charAt(0).toUpperCase() + tag.slice(1)}
-            </option>
-          ))}
-        </select>
+      <div className="mb-4 flex justify-between items-center">
+        <div>
+          <label htmlFor="tag-filter" className="text-gray-300 mr-2">Filter by Tag:</label>
+          <select
+            id="tag-filter"
+            value={selectedTag}
+            onChange={(e) => setSelectedTag(e.target.value)}
+            className="bg-gray-700 text-white rounded px-2 py-1"
+          >
+            {uniqueTags.map((tag) => (
+              <option key={tag} value={tag}>
+                {tag.charAt(0).toUpperCase() + tag.slice(1)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <ToggleSwitch isOn={!isMapView} onToggle={toggleView} />
       </div>
       <div className="flex flex-col md:flex-row gap-6">
         <div className="w-full md:w-1/2 h-[400px] rounded-lg overflow-hidden shadow-lg">
-          <Map
+          {isMapView ? (
+            <Map
             ref={mapRef}
             mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}
             initialViewState={{
@@ -183,6 +235,8 @@ const MapComponent: React.FC = () => {
               </Marker>
             )}
           </Map>
+          ) : ( renderListView())}
+          
         </div>
         <div className="w-full md:w-1/2 bg-gray-800 p-4 rounded-lg shadow-lg">
           {newPoint ? (
