@@ -1,20 +1,14 @@
 import React from 'react';
-
-interface Point {
-  name: string;
-  longitude: number;
-  latitude: number;
-  description: string;
-  tag: string;
-}
+import { Point } from '@/app/utils/types';
 
 interface POIFormProps {
   newPoint: Partial<Point>;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   onChange: (field: keyof Point, value: string) => void;
+  onCancel: () => void;
 }
 
-const POIForm: React.FC<POIFormProps> = ({ newPoint, onSubmit, onChange }) => {
+const POIForm: React.FC<POIFormProps> = ({ newPoint, onSubmit, onChange, onCancel}) => {
   return (
     <div className="relative">
       <form onSubmit={onSubmit} className="space-y-4">
@@ -30,7 +24,7 @@ const POIForm: React.FC<POIFormProps> = ({ newPoint, onSubmit, onChange }) => {
             required
           />
         </div>
-        <div>
+        {/*<div>
           <label htmlFor="latitude" className="block text-sm font-medium text-gray-300">Latitude</label>
           <input
             type="number"
@@ -49,16 +43,22 @@ const POIForm: React.FC<POIFormProps> = ({ newPoint, onSubmit, onChange }) => {
             readOnly
             className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white"
           />
-        </div>
+        </div>*/}
         <div>
           <label htmlFor="tag" className="block text-sm font-medium text-gray-300">Tag</label>
-          <input
-            type="text"
+          <select
             id="tag"
             value={newPoint.tag || ''}
             onChange={(e) => onChange('tag', e.target.value)}
             className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white"
-          />
+          >
+            <option value="">Select a tag (optional)</option>
+            <option value="food">Food</option>
+            <option value="event">Event</option>
+            <option value="school">School</option>
+            <option value="photo">Photo</option>
+            <option value="music">Music</option>
+          </select>
         </div>
         <div>
           <label htmlFor="description" className="block text-sm font-medium text-gray-300">Description</label>
@@ -72,6 +72,9 @@ const POIForm: React.FC<POIFormProps> = ({ newPoint, onSubmit, onChange }) => {
         </div>
         <button type="submit" className="w-full bg-blue-600 text-white rounded-md py-2 hover:bg-blue-700">
           Create Point
+        </button>
+        <button onClick={onCancel} className="w-full bg-red-600 text-white rounded-md py-2 hover:bg-red-700">
+          Cancel
         </button>
       </form>
     </div>

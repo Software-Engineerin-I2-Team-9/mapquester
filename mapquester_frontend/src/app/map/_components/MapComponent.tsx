@@ -3,20 +3,14 @@ import Map, { Marker, ViewState, MapRef, MapMouseEvent } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import POIForm from './POIForm';
 import UpdatePOIForm from './UpdatePOIForm';
-
-interface Point {
-  name: string;
-  longitude: number;
-  latitude: number;
-  description: string;
-  tag: string;
-}
+import { Point } from '@/app/utils/types'
+import { capitalize } from '@/app/utils/fns';
 
 const initialPoints: Point[] = [
   { name: 'Tandon School of Engineering', longitude: -73.9862, latitude: 40.6942, description: 'NYU\'s engineering and applied sciences campus in Brooklyn.', tag: 'school' },
-  { name: 'Brooklyn Bridge', longitude: -73.9969, latitude: 40.7061, description: 'An iconic suspension bridge connecting Manhattan and Brooklyn.', tag: 'scenery' },
-  { name: 'DUMBO', longitude: -73.9877, latitude: 40.7033, description: 'A trendy neighborhood known for its cobblestone streets and artistic atmosphere.', tag: 'scenery' },
-  { name: 'Prospect Park', longitude: -73.9701, latitude: 40.6602, description: 'A 526-acre urban oasis featuring diverse landscapes and recreational activities.', tag: 'scenery' },
+  { name: 'Brooklyn Bridge', longitude: -73.9969, latitude: 40.7061, description: 'An iconic suspension bridge connecting Manhattan and Brooklyn.', tag: 'photo' },
+  { name: 'DUMBO', longitude: -73.9877, latitude: 40.7033, description: 'A trendy neighborhood known for its cobblestone streets and artistic atmosphere.', tag: 'photo' },
+  { name: 'Prospect Park', longitude: -73.9701, latitude: 40.6602, description: 'A 526-acre urban oasis featuring diverse landscapes and recreational activities.', tag: 'photo' },
   { name: 'NYU Manhattan Campus', longitude: -73.9965, latitude: 40.7295, description: 'The main campus of New York University, located in Greenwich Village.', tag: 'school' },
 ];
 
@@ -28,6 +22,7 @@ const MapComponent: React.FC = () => {
   const [newlyCreatedPoint, setNewlyCreatedPoint] = useState<Point | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string>('all');
+  const [tempMarker, setTempMarker] = useState<{ longitude: number; latitude: number } | null>(null);
   const mapRef = useRef<MapRef>(null);
 
   const filteredPoints = selectedTag === 'all' 
@@ -39,6 +34,10 @@ const MapComponent: React.FC = () => {
   const handleMapClick = useCallback((event: MapMouseEvent) => {
     const { lngLat } = event;
     setNewPoint({
+      latitude: lngLat.lat,
+      longitude: lngLat.lng,
+    });
+    setTempMarker({
       latitude: lngLat.lat,
       longitude: lngLat.lng,
     });
@@ -57,6 +56,7 @@ const MapComponent: React.FC = () => {
       };
       setPoints([...points, createdPoint]);
       setNewPoint(null);
+      setTempMarker(null);
       setSelectedPoint(createdPoint);
       setNewlyCreatedPoint(createdPoint);
       setSelectedTag('all');
@@ -73,12 +73,16 @@ const MapComponent: React.FC = () => {
     }
   };
 
+  const cancelPointCreation = () => {
+    setNewPoint(null);
+    setTempMarker(null);
+  };
+
   const deletePoint = useCallback((pointToDelete: Point) => {
     setPoints(prevPoints => prevPoints.filter(point => point !== pointToDelete));
     if (selectedPoint === pointToDelete) {
       setSelectedPoint(null);
       setSelectedTag('all');
-
     }
   }, [selectedPoint]);
 
@@ -91,7 +95,6 @@ const MapComponent: React.FC = () => {
           : point
       );
       setPoints(updatedPoints);
-      setSelectedPoint(null);
       setIsUpdating(false);
       setSelectedTag('all');
     }
@@ -107,7 +110,7 @@ const MapComponent: React.FC = () => {
   const handleFormChange = (field: keyof Point, value: string) => {
     setNewPoint(prev => ({ ...prev, [field]: value }));
   };
-
+  
   return (
     <div className="w-full max-w-6xl bg-gray-900 p-6 rounded-lg">
       <h2 className="text-2xl font-bold text-gray-100 mb-4">Explore POIs</h2>
@@ -167,6 +170,15 @@ const MapComponent: React.FC = () => {
                 </div>
               </Marker>
             ))}
+            {tempMarker && (
+              <Marker
+                longitude={tempMarker.longitude}
+                latitude={tempMarker.latitude}
+                anchor="bottom"
+              >
+                <div className="w-3 h-3 rounded-full bg-white opacity-50"></div>
+              </Marker>
+            )}
           </Map>
         </div>
         <div className="w-full md:w-1/2 bg-gray-800 p-4 rounded-lg shadow-lg">
@@ -175,6 +187,7 @@ const MapComponent: React.FC = () => {
               newPoint={newPoint}
               onSubmit={handleFormSubmit}
               onChange={handleFormChange}
+              onCancel={cancelPointCreation}
             />
           ) : selectedPoint ? (
             isUpdating ? (
@@ -188,7 +201,7 @@ const MapComponent: React.FC = () => {
               <>
                 <h3 className="text-xl font-semibold text-gray-100 mb-3">{selectedPoint.name}</h3>
                 <p className="text-gray-300 mb-4">{selectedPoint.description}</p>
-                <p className="text-gray-300 mb-4">Tag: {selectedPoint.tag}</p>
+                <p className="text-gray-300 mb-4">Tag: {capitalize(selectedPoint.tag)}</p>
                 <div className="flex space-x-2">
                   <button 
                     onClick={() => setIsUpdating(true)}
