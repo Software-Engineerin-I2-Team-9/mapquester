@@ -51,8 +51,9 @@ const POIForm: React.FC<POIFormProps> = ({ newPoint, onSubmit, onChange, onCance
             value={newPoint.tag || ''}
             onChange={(e) => onChange('tag', e.target.value)}
             className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white"
+            required
           >
-            <option value="">Select a tag (optional)</option>
+            <option value="" disabled selected>Select your option</option>
             <option value="food">Food</option>
             <option value="event">Event</option>
             <option value="school">School</option>

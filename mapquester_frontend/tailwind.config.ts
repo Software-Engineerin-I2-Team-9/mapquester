@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+const colors = require('tailwindcss/colors')
 
 const config: Config = {
   content: [
@@ -9,6 +10,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        ...colors,
         background: "var(--background)",
         foreground: "var(--foreground)",
         blue: {
@@ -20,6 +22,9 @@ const config: Config = {
           100: "#E6FFEA",
           // ... other green shades if needed ...
         },
+        pink: {
+          500: "#ec4899",
+        }
       },
     },
   },

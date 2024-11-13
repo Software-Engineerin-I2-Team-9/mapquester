@@ -3,5 +3,5 @@ export interface Point {
     longitude: number;
     latitude: number;
     description: string;
-    tag: "food" | "event" | "school" | "photo" | "music" | "";
+    tag: "food" | "event" | "school" | "photo" | "music";
 }

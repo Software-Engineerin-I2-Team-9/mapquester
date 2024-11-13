@@ -28,11 +28,10 @@ const UpdatePOIForm: React.FC<UpdatePOIFormProps> = ({ point, onSubmit, onChange
           <label htmlFor="tag" className="block text-sm font-medium text-gray-300">Tag</label>
           <select
             id="tag"
-            value={point.tag || ''}
+            value={point.tag}
             onChange={(e) => onChange('tag', e.target.value)}
             className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white"
           >
-            <option value="">No Tag</option>
             <option value="food">Food</option>
             <option value="event">Event</option>
             <option value="school">School</option>
