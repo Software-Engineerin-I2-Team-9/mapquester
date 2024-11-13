@@ -19,7 +19,8 @@ class POITests(TestCase):
             "name": "Test Location",
             "description": "Test Description",
             "category": "restaurant",
-            "coordinates": "40.7128,-74.0060",
+            "latitude": 40.7128,
+            "longitude": -74.0060,
         }
 
         # Create a test POI

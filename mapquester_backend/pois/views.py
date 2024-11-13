@@ -1,7 +1,8 @@
 import base64
 import json
+
 # FIXME: need to add to requirements
-#import boto3
+# import boto3
 import os
 from django.conf import settings
 from django.core.files.storage import default_storage
@@ -163,7 +164,7 @@ def get_pois(request, user_id):
                 "page_size": page_size,
                 "total_pages": paginator.num_pages,
                 "total_pois": paginator.count,
-            }
+            },
         }
 
     # Handle map view with coordinate bounds
@@ -182,8 +183,10 @@ def get_pois(request, user_id):
             )
         except (KeyError, ValueError):
             return Response(
-                {"error": "Please provide valid min_lat, max_lat, min_lon, and max_lon values for map view"},
-                status=400
+                {
+                    "error": "Please provide valid min_lat, max_lat, min_lon, and max_lon values for map view"
+                },
+                status=400,
             )
 
         # Convert the filtered data to a list of dictionaries
@@ -191,7 +194,9 @@ def get_pois(request, user_id):
         response_data = {"pois": pois}
 
     else:
-        return Response({"error": "Invalid view type. Use 'list' or 'map'."}, status=400)
+        return Response(
+            {"error": "Invalid view type. Use 'list' or 'map'."}, status=400
+        )
 
     # Return the response data as JSON
     return JsonResponse(response_data, safe=False)
