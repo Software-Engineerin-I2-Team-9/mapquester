@@ -6,9 +6,7 @@ from users.models import User
 class POI(models.Model):
     id = models.AutoField(primary_key=True)
     userId = models.ForeignKey(User, on_delete=models.CASCADE)  # Linking to User model
-    latitude = models.DecimalField(
-        max_digits=9, decimal_places=6
-    )  # Decimal for more precision in coordinates
+    latitude = models.DecimalField( max_digits=9, decimal_places=6)  # Decimal for more precision in coordinates
     longitude = models.DecimalField(max_digits=9, decimal_places=6)
     isPublic = models.BooleanField(default=True)  # Representing public/private status
     isDeleted = models.BooleanField(default=False)  # Representing soft deletion status

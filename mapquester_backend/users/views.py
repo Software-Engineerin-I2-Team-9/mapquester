@@ -37,6 +37,7 @@ def login(request):
         return Response(
             {
                 "message": f"Welcome back, {user.username}!",
+                "id": str(user.id),
                 "refresh": str(refresh),
                 "access": str(refresh.access_token),
             },

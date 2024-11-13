@@ -1,6 +1,7 @@
 import base64
 import json
-import boto3
+# FIXME: need to add to requirements
+#import boto3
 import os
 from django.conf import settings
 from django.core.files.storage import default_storage
@@ -10,6 +11,8 @@ from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework import status
 from .models import POI
 from users.models import User
+from django.http import JsonResponse
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 # Initialize S3 client
 # s3_client = boto3.client(
@@ -115,6 +118,83 @@ def create_poi(request):
         },
         status=status.HTTP_201_CREATED,
     )
+
+
+# API to return a filtered list of POIS
+@api_view(["GET"])
+def get_pois(request, user_id):
+    # Get view type and filter list from the request
+    view_type = request.GET.get("view", "list")
+    tags = request.GET.getlist("tags")
+
+    # Initialize query for the user's POIs, excluding deleted POIs
+    pois_query = POI.objects.filter(userId=user_id, isDeleted=False)
+
+    # Apply tag filtering if tags are provided
+    if tags:
+        pois_query = pois_query.filter(tag__in=tags)
+
+    # Handle list view with pagination
+    if view_type == "list":
+        # Pagination parameters
+        try:
+            page = int(request.GET.get("page", 1))
+            page_size = int(request.GET.get("page_size", 10))
+        except ValueError:
+            return Response({"error": "Invalid pagination parameters"}, status=400)
+
+        # Paginate the POIs
+        paginator = Paginator(pois_query, page_size)
+        try:
+            pois_page = paginator.page(page)
+        except PageNotAnInteger:
+            pois_page = paginator.page(1)
+        except EmptyPage:
+            pois_page = paginator.page(paginator.num_pages)
+
+        # Convert paginated data to list of dictionaries
+        pois = list(pois_page.object_list.values())
+
+        # Include pagination metadata in response
+        response_data = {
+            "pois": pois,
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total_pages": paginator.num_pages,
+                "total_pois": paginator.count,
+            }
+        }
+
+    # Handle map view with coordinate bounds
+    elif view_type == "map":
+        # Retrieve bounding box coordinates from request
+        try:
+            min_lat = float(request.GET["min_lat"])
+            max_lat = float(request.GET["max_lat"])
+            min_lon = float(request.GET["min_lon"])
+            max_lon = float(request.GET["max_lon"])
+            pois_query = pois_query.filter(
+                latitude__gte=min_lat,
+                latitude__lte=max_lat,
+                longitude__gte=min_lon,
+                longitude__lte=max_lon,
+            )
+        except (KeyError, ValueError):
+            return Response(
+                {"error": "Please provide valid min_lat, max_lat, min_lon, and max_lon values for map view"},
+                status=400
+            )
+
+        # Convert the filtered data to a list of dictionaries
+        pois = list(pois_query.values())
+        response_data = {"pois": pois}
+
+    else:
+        return Response({"error": "Invalid view type. Use 'list' or 'map'."}, status=400)
+
+    # Return the response data as JSON
+    return JsonResponse(response_data, safe=False)
 
 
 # API to update POI's isPublic and reactions
