@@ -9,6 +9,9 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        'curly': ['Pacifico', 'cursive'],
+      },
       colors: {
         ...colors,
         background: "var(--background)",
@@ -24,7 +27,20 @@ const config: Config = {
         },
         pink: {
           500: "#ec4899",
-        }
+        },
+        terracotta: '#CD5C5C',
+        sand: '#E6C9A8',
+        gold: '#D4AF37',
+        coral: '#F08080',
+        burgundy: '#800020',
+        mustardyellow: '#F2C94C',
+        warmcoral: '#EB5757',
+        mutedorange: '#F2994A',
+        dustyteal: '#56CCF2',
+        deepolivegreen: '#6FCF97',
+        eggshell: "#F0EBE1",
+        mutedsand: "#D9C7B4",
+        softterracotta: "#D69C89",
       },
     },
   },

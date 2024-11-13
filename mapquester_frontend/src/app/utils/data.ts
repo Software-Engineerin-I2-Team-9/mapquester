@@ -1,7 +1,7 @@
 export const tagToColorMapping: {[key:string]:string} = {
-    "food": "#FF6347",
-    "event": "#9B30FF",
-    "school": "#1E90FF",
-    "photo": "#FFD700",
-    "music": "#FF69B4",
+    "food": "#b24531",
+    "event": "#6c21b2",
+    "school": "#1564b2",
+    "photo": "#b29600",
+    "music": "#b2497d",
 }

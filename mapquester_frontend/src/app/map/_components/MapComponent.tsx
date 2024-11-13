@@ -10,7 +10,7 @@ import { tagToColorMapping } from '@/app/utils/data';
 const ToggleSwitch: React.FC<{ isOn: boolean; onToggle: () => void }> = ({ isOn, onToggle }) => {
   return (
     <div className="flex items-center">
-      <span className="mr-2 text-gray-300">List View</span>
+      <span className="mr-2 text-gray-800">List View</span>
       <div
         className={`w-14 h-7 flex items-center rounded-full p-1 cursor-pointer ${
           isOn ? 'bg-blue-500' : 'bg-gray-700'
@@ -137,18 +137,18 @@ const MapComponent: React.FC = () => {
   };
 
   const renderListView = () => (
-    <div className="w-full h-[400px] overflow-y-auto bg-gray-800 rounded-lg shadow-lg">
+    <div className="w-full h-[400px] overflow-y-auto rounded-lg shadow-lg">
       {filteredPoints.map((point, index) => (
-        <div key={index} className="p-4 mb-4 bg-gray-700 rounded-lg">
-          <h3 className="text-xl font-semibold text-gray-100 mb-2 flex items-center">
+        <div key={index} className="p-4 mb-4 bg-eggshell rounded-lg">
+          <h3 className="text-xl font-semibold text-gray-800 mb-2 flex items-center">
           {point.name}
           <span 
             className="ml-2 inline-block w-3 h-3 rounded-full"
             style={{ backgroundColor: tagToColorMapping[point.tag] }}
           ></span>
         </h3>
-          <p className="text-gray-300 mb-2">{point.description}</p>
-          <p className="text-gray-300">Tag: {capitalize(point.tag)}</p>
+          <p className="text-gray-800 mb-2">{point.description}</p>
+          <p className="text-gray-800">Tag: {capitalize(point.tag)}</p>
           <button
             onClick={() => setSelectedPoint(point)}
             className="mt-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded"
@@ -161,17 +161,17 @@ const MapComponent: React.FC = () => {
   );
 
   return (
-    <div className="w-full max-w-6xl bg-gray-900 p-6 rounded-lg">
-      <h2 className="text-2xl font-bold text-gray-100 mb-4">Explore POIs</h2>
-      <p className="text-gray-300 mb-6">Discover Points of Interest around New York City</p>
+    <div className="w-full max-w-6xl p-6 rounded-lg">
+      <h2 className="text-2xl font-bold text-gray-800 mb-4">Explore POIs</h2>
+      <p className="text-gray-800 mb-6">Discover Points of Interest around New York City</p>
       <div className="mb-4 flex justify-between items-center">
         <div>
-          <label htmlFor="tag-filter" className="text-gray-300 mr-2">Filter by Tag:</label>
+          <label htmlFor="tag-filter" className="text-gray-800 mr-2">Filter by Tag:</label>
           <select
             id="tag-filter"
             value={selectedTag}
             onChange={(e) => setSelectedTag(e.target.value)}
-            className="bg-gray-700 text-white rounded px-2 py-1"
+            className="bg-eggshell text-gray-800 rounded px-2 py-1"
           >
             {uniqueTags.map((tag) => (
               <option key={tag} value={tag}>
@@ -196,7 +196,7 @@ const MapComponent: React.FC = () => {
             onMove={e => setCurrViewState(e.viewState)}
             onClick={handleMapClick}
             style={{width: '100%', height: '100%'}}
-            mapStyle="mapbox://styles/mapbox/dark-v10"
+            mapStyle="mapbox://styles/sentient-ramen/cm2lfmqpq00au01p707n1dyky"
           >
             {filteredPoints.map((point, index) => {
               return (   
@@ -216,7 +216,7 @@ const MapComponent: React.FC = () => {
                   }}
                 >
                   <div className="flex flex-col items-center">
-                    <div className="text-xs font-bold text-white bg-black bg-opacity-50 px-1 rounded mb-1">
+                    <div className="text-xs font-bold text-eggshell bg-black bg-opacity-50 px-1 rounded mb-1">
                       {point.name}
                     </div>
                     <div style={{backgroundColor:`${newlyCreatedPoint === point ? null :tagToColorMapping[point.tag]}`}} className={`w-3 h-3 rounded-full ${newlyCreatedPoint === point ? 'bg-green-500 animate-pulse' : null}`}></div>
@@ -231,14 +231,14 @@ const MapComponent: React.FC = () => {
                 latitude={tempMarker.latitude}
                 anchor="bottom"
               >
-                <div className="w-3 h-3 rounded-full bg-white opacity-50"></div>
+                <div className="w-3 h-3 rounded-full bg-gray-900 opacity-50"></div>
               </Marker>
             )}
           </Map>
           ) : ( renderListView())}
           
         </div>
-        <div className="w-full md:w-1/2 bg-gray-800 p-4 rounded-lg shadow-lg">
+        <div className="w-full md:w-1/2 bg-eggshell p-4 rounded-lg shadow-lg">
           {newPoint ? (
             <POIForm
               newPoint={newPoint}
@@ -256,9 +256,9 @@ const MapComponent: React.FC = () => {
               />
             ) : (
               <>
-                <h3 className="text-xl font-semibold text-gray-100 mb-3">{selectedPoint.name}</h3>
-                <p className="text-gray-300 mb-4">{selectedPoint.description}</p>
-                <p className="text-gray-300 mb-4">Tag: {capitalize(selectedPoint.tag)}</p>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">{selectedPoint.name}</h3>
+                <p className="text-gray-800 mb-4">{selectedPoint.description}</p>
+                <p className="text-gray-800 mb-4">Tag: {capitalize(selectedPoint.tag)}</p>
                 <div className="flex space-x-2">
                   <button 
                     onClick={() => setIsUpdating(true)}
@@ -277,13 +277,13 @@ const MapComponent: React.FC = () => {
             )
           ) : (
             <>
-              <h3 className="text-xl font-semibold text-gray-100 mb-3">About This Map</h3>
-              <p className="text-gray-300">
+              <h3 className="text-xl font-semibold text-gray-800 mb-3">About This Map</h3>
+              <p className="text-gray-800">
                 This interactive map showcases key Points of Interest (POIs) in New York City. Click on any marker to view more details about the location. Click anywhere on the map to add a new point.
               </p>
-              <ul className="mt-4 text-gray-300">
+              <ul className="mt-4 text-gray-800">
                 <li>🔴 Markers indicate POI locations</li>
-                <li>🖱️ Click on a marker to view details</li>
+                <li>👆 Click on a marker to view details</li>
                 <li>➕ Click on the map to add a new point</li>
                 <li>🏙️ Explore the city's diverse attractions</li>
               </ul>
