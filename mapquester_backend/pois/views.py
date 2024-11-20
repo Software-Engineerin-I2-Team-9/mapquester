@@ -109,7 +109,7 @@ def create_poi(request):
             file_url = s3_client.generate_presigned_url(
                 'get_object',
                 Params={'Bucket': settings.AWS_STORAGE_BUCKET_NAME, 'Key': s3_key},
-                ExpiresIn=3600  # URL expires in 1 hour
+                ExpiresIn=settings.AWS_S3_PRESIGNED_URL_TIME
             )
             #file_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{s3_key}"
             response_urls.append("s3://"+s3_key)
