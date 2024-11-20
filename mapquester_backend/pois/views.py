@@ -18,10 +18,10 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 # Initialize S3 client
 s3_client = boto3.client(
-    's3',
+    "s3",
     aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
     aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-    region_name=settings.AWS_S3_REGION_NAME
+    region_name=settings.AWS_S3_REGION_NAME,
 )
 
 
@@ -91,36 +91,36 @@ def create_poi(request):
     response_urls = []
     for content_file in content_files:
         try:
-            file_name = content_file['filename']
+            file_name = content_file["filename"]
             s3_key = f"poi_attachments/{poi.id}/{file_name}"
 
             # Save file using Django's storage system
-            image_data = base64.b64decode(content_file['data'])
+            image_data = base64.b64decode(content_file["data"])
             image_file = ContentFile(image_data, name=file_name)
 
             # Upload file to S3
             s3_client.upload_fileobj(
-                image_file,
-                settings.AWS_STORAGE_BUCKET_NAME,
-                s3_key
+                image_file, settings.AWS_STORAGE_BUCKET_NAME, s3_key
             )
 
             # Get file URL and add to list
             file_url = s3_client.generate_presigned_url(
-                'get_object',
-                Params={'Bucket': settings.AWS_STORAGE_BUCKET_NAME, 'Key': s3_key},
-                ExpiresIn=settings.AWS_S3_PRESIGNED_URL_TIME
+                "get_object",
+                Params={"Bucket": settings.AWS_STORAGE_BUCKET_NAME, "Key": s3_key},
+                ExpiresIn=settings.AWS_S3_PRESIGNED_URL_TIME,
             )
-            #file_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{s3_key}"
+            # file_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{s3_key}"
             response_urls.append(s3_key)
             s3_urls.append(file_url)
 
         except Exception as e:
-            return Response({"error": f"Failed to upload {file_name}: {str(e)}"},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"error": f"Failed to upload {file_name}: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     # Step 4: Update the POI entry with S3 URLs
-    #local_urls = s3_urls
+    # local_urls = s3_urls
     poi.content = s3_urls
     poi.save()
 
