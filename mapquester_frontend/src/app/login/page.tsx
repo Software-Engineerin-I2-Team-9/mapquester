@@ -29,7 +29,7 @@ const Login = () => {
   };
 
   return (
-    <main className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
+    <main className="flex justify-center items-center min-h-screen bg-gradient-to-r from-blue-500 to-purple-500 p-4">
       <LoginForm onLogin={handleLogin} onSignup={handleSignup} />
     </main>
   );

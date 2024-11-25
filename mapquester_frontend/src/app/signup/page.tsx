@@ -14,8 +14,8 @@ export default function SignUp() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
+    <main className="flex justify-center items-center min-h-screen bg-gradient-to-r from-blue-500 to-purple-500 p-4">
       <SignupForm onSignup={handleSignup} />
-    </div>
+    </main>
   );
 }

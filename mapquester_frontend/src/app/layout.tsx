@@ -25,10 +25,11 @@ export default function RootLayout({
   return (
     <RecoilRoot>
       <html lang="en">
+        <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet"/>
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          {children}
+            {children}
         </body>
       </html>
     </RecoilRoot>
