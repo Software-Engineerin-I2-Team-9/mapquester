@@ -28,18 +28,44 @@ const ToggleSwitch: React.FC<{ isOn: boolean; onToggle: () => void }> = ({ isOn,
 };
 
 const initialPoints: Point[] = [
-  { name: 'Tandon School of Engineering', longitude: -73.9862, latitude: 40.6942, description: 'NYU\'s engineering and applied sciences campus in Brooklyn.', tag: 'school' },
-  { name: 'Brooklyn Bridge', longitude: -73.9969, latitude: 40.7061, description: 'An iconic suspension bridge connecting Manhattan and Brooklyn.', tag: 'photo' },
-  { name: 'DUMBO', longitude: -73.9877, latitude: 40.7033, description: 'A trendy neighborhood known for its cobblestone streets and artistic atmosphere.', tag: 'photo' },
-  { name: 'Prospect Park', longitude: -73.9701, latitude: 40.6602, description: 'A 526-acre urban oasis featuring diverse landscapes and recreational activities.', tag: 'photo' },
-  { name: 'NYU Manhattan Campus', longitude: -73.9965, latitude: 40.7295, description: 'The main campus of New York University, located in Greenwich Village.', tag: 'school' },
+  { 
+    name: "Tandon School of Engineering",
+    longitude: -73.9862,
+    latitude: 40.6942,
+    description: "NYU&apos;s engineering and applied sciences campus in Brooklyn."
+  },
+  {
+    name: "Brooklyn Bridge",
+    longitude: -73.9969,
+    latitude: 40.7061,
+    description: "An iconic suspension bridge connecting Manhattan and Brooklyn."
+  },
+  {
+    name: "DUMBO",
+    longitude: -73.9877,
+    latitude: 40.7033,
+    description: "A trendy neighborhood known for its cobblestone streets and artistic atmosphere."
+  },
+  {
+    name: "Prospect Park",
+    longitude: -73.9701,
+    latitude: 40.6602,
+    description: "A 526-acre urban oasis featuring diverse landscapes and recreational activities."
+  },
+  {
+    name: "NYU Manhattan Campus",
+    longitude: -73.9965,
+    latitude: 40.7295,
+    description: "The main campus of New York University, located in Greenwich Village."
+  }
 ];
 
 const MapComponent: React.FC = () => {
   const [points, setPoints] = useState<Point[]>(initialPoints);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
   const [newPoint, setNewPoint] = useState<Partial<Point> | null>(null);
-  const [currViewState, setCurrViewState] = useState<ViewState | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [currViewState, setCurrViewState] = useState<ViewState | null>(null); 
   const [newlyCreatedPoint, setNewlyCreatedPoint] = useState<Point | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string>('all');
@@ -285,7 +311,7 @@ const MapComponent: React.FC = () => {
                 <li>🔴 Markers indicate POI locations</li>
                 <li>👆 Click on a marker to view details</li>
                 <li>➕ Click on the map to add a new point</li>
-                <li>🏙️ Explore the city's diverse attractions</li>
+                <li>🏙️ Explore the city&apos;s diverse attractions</li>
               </ul>
             </>
           )}

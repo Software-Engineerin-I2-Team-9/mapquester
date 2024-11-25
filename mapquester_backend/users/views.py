@@ -8,38 +8,48 @@ from .forms import UserRegisterForm, UserLoginForm
 
 User = get_user_model()
 
-@api_view(['POST'])
+
+@api_view(["POST"])
 def signup(request):
     form = UserRegisterForm(request.data)
     if form.is_valid():
         user = form.save()
-        return Response({
-            'message': f'Account created successfully for {user.username}!',
-            'details': 'Please log in to access your account.'
-        }, status=status.HTTP_201_CREATED)
-    return Response({
-        'error': 'Registration failed',
-        'form_errors': form.errors
-    }, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {
+                "message": f"Account created successfully for {user.username}!",
+                "details": "Please log in to access your account.",
+            },
+            status=status.HTTP_201_CREATED,
+        )
+    return Response(
+        {"error": "Registration failed", "form_errors": form.errors},
+        status=status.HTTP_400_BAD_REQUEST,
+    )
 
-@api_view(['POST'])
+
+@api_view(["POST"])
 def login(request):
-    username = request.data.get('username')
-    password = request.data.get('password')
+    username = request.data.get("username")
+    password = request.data.get("password")
     user = authenticate(username=username, password=password)
     if user:
         refresh = RefreshToken.for_user(user)
-        return Response({
-            'message': f'Welcome back, {user.username}!',
-            'refresh': str(refresh),
-            'access': str(refresh.access_token)
-        }, status=status.HTTP_200_OK)
-    return Response({
-        'error': 'Authentication failed',
-        'detail': 'Invalid username or password'
-    }, status=status.HTTP_401_UNAUTHORIZED)
+        return Response(
+            {
+                "message": f"Welcome back, {user.username}!",
+                "id": str(user.id),
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+            },
+            status=status.HTTP_200_OK,
+        )
+    return Response(
+        {"error": "Authentication failed", "detail": "Invalid username or password"},
+        status=status.HTTP_401_UNAUTHORIZED,
+    )
 
-@api_view(['POST'])
+
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def logout(request):
     try:
@@ -47,25 +57,39 @@ def logout(request):
         print(refresh_token)
         token = RefreshToken(refresh_token)
         token.blacklist()
-        return Response({"message": "You have been successfully logged out."}, status=status.HTTP_205_RESET_CONTENT)
+        return Response(
+            {"message": "You have been successfully logged out."},
+            status=status.HTTP_205_RESET_CONTENT,
+        )
     except Exception as e:
         print(f"Error during logout: {str(e)}")
-        return Response({"error": "Invalid token or token not provided."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"error": "Invalid token or token not provided."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
-@api_view(['POST'])
+
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def edit_profile(request):
     user = request.user
-    user.username = request.data.get('username', user.username)
-    user.email = request.data.get('email', user.email)
-    user.profile_info = request.data.get('profile_info', user.profile_info)
-    
-    user.save()
-    return Response({'message': 'Your profile has been updated successfully.'}, status=status.HTTP_200_OK)
+    user.username = request.data.get("username", user.username)
+    user.email = request.data.get("email", user.email)
+    user.profile_info = request.data.get("profile_info", user.profile_info)
 
-@api_view(['POST'])
+    user.save()
+    return Response(
+        {"message": "Your profile has been updated successfully."},
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def delete_account(request):
     user = request.user
     user.delete()
-    return Response({'message': 'Your account has been deleted successfully.'}, status=status.HTTP_200_OK)
+    return Response(
+        {"message": "Your account has been deleted successfully."},
+        status=status.HTTP_200_OK,
+    )
