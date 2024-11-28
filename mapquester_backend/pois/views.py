@@ -33,16 +33,16 @@ def create_poi(request):
 
     # Step 1: Extract and validate data
     try:
-        user = User.objects.get(id=data["userId"])
-        latitude = data["latitude"]
-        longitude = data["longitude"]
+        user = User.objects.get(id=data.get("userId"))
+        latitude = data.get("latitude")
+        longitude = data.get("longitude")
         is_public = data.get("isPublic", 1)
         is_deleted = data.get("isDeleted", 0)
-        title = data["title"]
-        tag = data["tag"]
-        description = data["description"]
+        title = data.get("title")
+        tag = data.get("tag")
+        description = data.get("description")
         reactions = data.get("reactions", 0)
-        content_files = data["content"]
+        content_files = data.get("content",[])
         print("Content: ", content_files)
     except KeyError as e:
         return Response(
@@ -138,14 +138,14 @@ def create_poi(request):
 @api_view(["GET"])
 def get_pois(request, user_id):
     # Get view type and filter list from the request
-    view_type = request.GET.get("view", "list")
+    view_type = request.GET.get("viewType")
     tags = request.GET.getlist("tags")
 
     # Initialize query for the user's POIs, excluding deleted POIs
     pois_query = POI.objects.filter(userId=user_id, isDeleted=False)
 
     # Apply tag filtering if tags are provided
-    if tags:
+    if tags and len(tags) != 0:
         pois_query = pois_query.filter(tag__in=tags)
 
     # Handle list view with pagination
@@ -184,10 +184,10 @@ def get_pois(request, user_id):
     elif view_type == "map":
         # Retrieve bounding box coordinates from request
         try:
-            min_lat = float(request.GET["min_lat"])
-            max_lat = float(request.GET["max_lat"])
-            min_lon = float(request.GET["min_lon"])
-            max_lon = float(request.GET["max_lon"])
+            min_lat = float(request.GET.get("min_lat", -90))
+            max_lat = float(request.GET.get("max_lat", 90))
+            min_lon = float(request.GET.get("min_lon", -180))
+            max_lon = float(request.GET.get("max_lon", 180))
             pois_query = pois_query.filter(
                 latitude__gte=min_lat,
                 latitude__lte=max_lat,

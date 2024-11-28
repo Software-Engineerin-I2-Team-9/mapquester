@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import Map, { Marker, ViewState, MapRef, MapMouseEvent } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import POIForm from './POIForm';
@@ -6,6 +6,9 @@ import UpdatePOIForm from './UpdatePOIForm';
 import { Point } from '@/app/utils/types'
 import { capitalize } from '@/app/utils/fns';
 import { tagToColorMapping } from '@/app/utils/data';
+import apiClient from '@/app/api/axios';
+import { useRecoilState } from 'recoil';
+import { authState } from '../../atoms/authState';
 
 const ToggleSwitch: React.FC<{ isOn: boolean; onToggle: () => void }> = ({ isOn, onToggle }) => {
   return (
@@ -27,16 +30,8 @@ const ToggleSwitch: React.FC<{ isOn: boolean; onToggle: () => void }> = ({ isOn,
   );
 };
 
-const initialPoints: Point[] = [
-  { name: 'Tandon School of Engineering', longitude: -73.9862, latitude: 40.6942, description: 'NYU\'s engineering and applied sciences campus in Brooklyn.', tag: 'school' },
-  { name: 'Brooklyn Bridge', longitude: -73.9969, latitude: 40.7061, description: 'An iconic suspension bridge connecting Manhattan and Brooklyn.', tag: 'photo' },
-  { name: 'DUMBO', longitude: -73.9877, latitude: 40.7033, description: 'A trendy neighborhood known for its cobblestone streets and artistic atmosphere.', tag: 'photo' },
-  { name: 'Prospect Park', longitude: -73.9701, latitude: 40.6602, description: 'A 526-acre urban oasis featuring diverse landscapes and recreational activities.', tag: 'photo' },
-  { name: 'NYU Manhattan Campus', longitude: -73.9965, latitude: 40.7295, description: 'The main campus of New York University, located in Greenwich Village.', tag: 'school' },
-];
-
 const MapComponent: React.FC = () => {
-  const [points, setPoints] = useState<Point[]>(initialPoints);
+  const [points, setPoints] = useState<Point[]>([]);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
   const [newPoint, setNewPoint] = useState<Partial<Point> | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -47,16 +42,57 @@ const MapComponent: React.FC = () => {
   const [tempMarker, setTempMarker] = useState<{ longitude: number; latitude: number } | null>(null);
   const [isMapView, setIsMapView] = useState(true);
   const mapRef = useRef<MapRef>(null);
+  const [auth, setAuth] = useRecoilState(authState);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-  const filteredPoints = selectedTag === 'all' 
+  useEffect(() => {
+    const fetchPoints = async () => {
+      if (auth?.id) {
+        try {
+          const endpoint = `/api/v1/pois/get/${auth?.id}`;
+          const response = await apiClient.get(endpoint, {
+            params: {
+              viewType: isMapView ? 'map' : 'list',
+              tags: selectedTag === 'all' ? [] : [selectedTag],
+              page: currentPage,
+              page_size: 10 // Adjust as needed
+            }
+          });
+          if (currentPage === 1) {
+            setPoints(response.data.pois);
+          } else {
+            setPoints(prevPoints => [...prevPoints, ...response.data.pois]);
+          }
+          setHasMore(currentPage < response.data.pagination.total_pages);
+        } catch (error) {
+          console.error('Error fetching points:', error);
+        }
+      }
+    };
+    fetchPoints();
+  }, [auth?.id, selectedTag, isMapView, currentPage]);
+
+  /*const filteredPoints = selectedTag === 'all' 
     ? points 
-    : points.filter(point => point.tag === selectedTag);
+    : points.filter(point => point.tag === selectedTag);*/
 
   const uniqueTags = ['all', ...Array.from(new Set(points.map(point => point.tag)))];
   
+  const loadMorePOIs = () => {
+    if (hasMore) {
+      setCurrentPage(prevPage => prevPage + 1);
+    }
+  };
+
   const toggleView = () => {
     setIsMapView(!isMapView);
   };
+
+  const handleTagChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedTag(e.target.value);
+  };
+
   const handleMapClick = useCallback((event: MapMouseEvent) => {
     const { lngLat } = event;
     setNewPoint({
@@ -70,32 +106,66 @@ const MapComponent: React.FC = () => {
     setSelectedPoint(null);
   }, []);
 
-  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (newPoint && newPoint.name && newPoint.description) {
-      const createdPoint: Point = {
-        name: newPoint.name,
-        latitude: newPoint.latitude!,
-        longitude: newPoint.longitude!,
-        description: newPoint.description,
-        tag: newPoint.tag!,
-      };
-      setPoints([...points, createdPoint]);
-      setNewPoint(null);
-      setTempMarker(null);
-      setSelectedPoint(createdPoint);
-      setNewlyCreatedPoint(createdPoint);
-      setSelectedTag('all');
-
-      // Center the map on the new point
-      mapRef.current?.flyTo({
-        center: [createdPoint.longitude, createdPoint.latitude],
-        zoom: 14,
-        duration: 2000
-      });
-
-      // Clear the newly created point highlight after 3 seconds
-      setTimeout(() => setNewlyCreatedPoint(null), 3000);
+      try {
+        const formData = new FormData();
+        console.log(auth?.id)
+        formData.append('userId', auth?.id);
+        formData.append('latitude', newPoint.latitude!.toString());
+        formData.append('longitude', newPoint.longitude!.toString());
+        // formData.append('isPublic', '1');
+        formData.append('title', newPoint.name);
+        formData.append('tag', newPoint.tag!);
+        formData.append('description', newPoint.description);
+  
+        // Handle file uploads if any
+        /*
+        if (newPoint.content && newPoint.content.length > 0) {
+          newPoint.content.forEach((file, index) => {
+            formData.append(`content[${index}][filename]`, file.name);
+            formData.append(`content[${index}][data]`, file);
+          });
+        }
+        */
+        const endpoint = '/api/v1/pois/create/'
+        const response = await apiClient.post(endpoint, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+  
+        if (response.status === 201) {
+          const createdPoint: Point = {
+            id: response.data.poi_id,
+            name: newPoint.name,
+            latitude: newPoint.latitude!,
+            longitude: newPoint.longitude!,
+            description: newPoint.description,
+            tag: newPoint.tag!,
+            // content: response.data.content_urls,
+          };
+  
+          setPoints([...points, createdPoint]);
+          setNewPoint(null);
+          setTempMarker(null);
+          setSelectedPoint(createdPoint);
+          setNewlyCreatedPoint(createdPoint);
+          setSelectedTag('all');
+  
+          // Center the map on the new point
+          mapRef.current?.flyTo({
+            center: [createdPoint.longitude, createdPoint.latitude],
+            zoom: 14,
+            duration: 2000
+          });
+  
+          setTimeout(() => setNewlyCreatedPoint(null), 3000);
+        }
+      } catch (error) {
+        console.error('Error creating POI:', error);
+      }
     }
   };
 
@@ -104,25 +174,50 @@ const MapComponent: React.FC = () => {
     setTempMarker(null);
   };
 
-  const deletePoint = useCallback((pointToDelete: Point) => {
-    setPoints(prevPoints => prevPoints.filter(point => point !== pointToDelete));
-    if (selectedPoint === pointToDelete) {
-      setSelectedPoint(null);
-      setSelectedTag('all');
+  const deletePoint = useCallback(async (pointToDelete: Point) => {
+    try {
+      const endpoint = `/api/v1/pois/delete/${pointToDelete.id}/`;
+      const response = await apiClient.patch(endpoint);
+  
+      if (response.status === 200) {
+        setPoints(prevPoints => prevPoints.filter(point => point.id !== pointToDelete.id));
+        if (selectedPoint && selectedPoint.id === pointToDelete.id) {
+          setSelectedPoint(null);
+          setSelectedTag('all');
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting POI:', error);
     }
   }, [selectedPoint]);
 
-  const handleUpdateSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleUpdateSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (selectedPoint) {
-      const updatedPoints = points.map(point => 
-        point.longitude === selectedPoint.longitude && point.latitude === selectedPoint.latitude
-          ? { ...selectedPoint }
-          : point
-      );
-      setPoints(updatedPoints);
-      setIsUpdating(false);
-      setSelectedTag('all');
+      try {
+        const endpoint = `/api/v1/pois/update/${selectedPoint.id}/`;
+        const updateData = {
+          title: selectedPoint.name,
+          description: selectedPoint.description,
+          tag: selectedPoint.tag,
+          latitude: selectedPoint.latitude,
+          longitude: selectedPoint.longitude
+        };
+  
+        const response = await apiClient.patch(endpoint, updateData);
+  
+        if (response.status === 200) {
+          const updatedPoints = points.map(point => 
+            point.id === selectedPoint.id ? { ...point, ...response.data } : point
+          );
+          setPoints(updatedPoints);
+          setSelectedPoint({ ...selectedPoint, ...response.data });
+          setIsUpdating(false);
+          setSelectedTag('all');
+        }
+      } catch (error) {
+        console.error('Error updating POI:', error);
+      }
     }
   };
 
@@ -138,16 +233,24 @@ const MapComponent: React.FC = () => {
   };
 
   const renderListView = () => (
-    <div className="w-full h-[400px] overflow-y-auto rounded-lg shadow-lg">
-      {filteredPoints.map((point, index) => (
+    <div 
+      className="w-full h-[400px] overflow-y-auto rounded-lg shadow-lg"
+      onScroll={(e) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+        if (scrollHeight - scrollTop <= clientHeight * 1.5) {
+          loadMorePOIs();
+        }
+      }}
+    >
+      {points.map((point, index) => (
         <div key={index} className="p-4 mb-4 bg-eggshell rounded-lg">
           <h3 className="text-xl font-semibold text-gray-800 mb-2 flex items-center">
-          {point.name}
-          <span 
-            className="ml-2 inline-block w-3 h-3 rounded-full"
-            style={{ backgroundColor: tagToColorMapping[point.tag] }}
-          ></span>
-        </h3>
+            {point.name}
+            <span
+              className="ml-2 inline-block w-3 h-3 rounded-full"
+              style={{ backgroundColor: tagToColorMapping[point.tag] }}
+            ></span>
+          </h3>
           <p className="text-gray-800 mb-2">{point.description}</p>
           <p className="text-gray-800">Tag: {capitalize(point.tag)}</p>
           <button
@@ -158,6 +261,11 @@ const MapComponent: React.FC = () => {
           </button>
         </div>
       ))}
+      {hasMore && (
+        <div className="text-center py-4">
+          <span className="text-gray-600">Loading more POIs...</span>
+        </div>
+      )}
     </div>
   );
 
@@ -171,7 +279,7 @@ const MapComponent: React.FC = () => {
           <select
             id="tag-filter"
             value={selectedTag}
-            onChange={(e) => setSelectedTag(e.target.value)}
+            onChange={handleTagChange}
             className="bg-eggshell text-gray-800 rounded px-2 py-1"
           >
             {uniqueTags.map((tag) => (
@@ -199,7 +307,7 @@ const MapComponent: React.FC = () => {
             style={{width: '100%', height: '100%'}}
             mapStyle="mapbox://styles/sentient-ramen/cm2lfmqpq00au01p707n1dyky"
           >
-            {filteredPoints.map((point, index) => {
+            {points.map((point, index) => {
               return (   
               <Marker
                 key={index}
