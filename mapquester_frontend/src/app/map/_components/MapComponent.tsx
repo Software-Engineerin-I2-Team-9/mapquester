@@ -6,6 +6,8 @@ import UpdatePOIForm from './UpdatePOIForm';
 import { Point } from '@/app/utils/types'
 import { capitalize } from '@/app/utils/fns';
 import { tagToColorMapping } from '@/app/utils/data';
+import GuidePopup from './GuidePopup';
+import ConfirmationDialog from '@/components/ConfirmationDialog';
 
 const ToggleSwitch: React.FC<{ isOn: boolean; onToggle: () => void }> = ({ isOn, onToggle }) => {
   return (
@@ -47,28 +49,43 @@ const MapComponent: React.FC = () => {
   const [tempMarker, setTempMarker] = useState<{ longitude: number; latitude: number } | null>(null);
   const [isMapView, setIsMapView] = useState(true);
   const mapRef = useRef<MapRef>(null);
+  const ALL_TAGS = ['all', ...Object.keys(tagToColorMapping)];
+
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingLocation, setPendingLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const filteredPoints = selectedTag === 'all' 
     ? points 
     : points.filter(point => point.tag === selectedTag);
 
-  const uniqueTags = ['all', ...Array.from(new Set(points.map(point => point.tag)))];
+    const uniqueTags = ALL_TAGS;
   
   const toggleView = () => {
     setIsMapView(!isMapView);
   };
+  
   const handleMapClick = useCallback((event: MapMouseEvent) => {
     const { lngLat } = event;
-    setNewPoint({
+    setPendingLocation({
       latitude: lngLat.lat,
       longitude: lngLat.lng,
     });
-    setTempMarker({
-      latitude: lngLat.lat,
-      longitude: lngLat.lng,
-    });
-    setSelectedPoint(null);
+    setShowConfirmation(true);
   }, []);
+
+  const handleConfirmNewPoint = () => {
+    if (pendingLocation) {
+      setNewPoint(pendingLocation);
+      setTempMarker(pendingLocation);
+      setSelectedPoint(null);
+    }
+    setShowConfirmation(false);
+  };
+
+  const handleCancelNewPoint = () => {
+    setPendingLocation(null);
+    setShowConfirmation(false);
+  };
 
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -162,10 +179,12 @@ const MapComponent: React.FC = () => {
   );
 
   return (
-    <div className="w-full max-w-6xl p-6 rounded-lg">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4">Explore POIs</h2>
-      <p className="text-gray-800 mb-6">Discover Points of Interest around New York City</p>
-      <div className="mb-4 flex justify-between items-center">
+    <div className="flex flex-col h-full">
+    {/* Title and Filter Section */}
+    <div className="px-4 py-2">
+      <h2 className="text-2xl font-bold text-gray-800">Explore POIs</h2>
+      <p className="text-gray-600 mb-4">Discover Points of Interest around New York City</p>
+      <div className="flex justify-between items-center mb-2">
         <div>
           <label htmlFor="tag-filter" className="text-gray-800 mr-2">Filter by Tag:</label>
           <select
@@ -183,22 +202,24 @@ const MapComponent: React.FC = () => {
         </div>
         <ToggleSwitch isOn={!isMapView} onToggle={toggleView} />
       </div>
-      <div className="flex flex-col md:flex-row gap-6">
-        <div className="w-full md:w-1/2 h-[400px] rounded-lg overflow-hidden shadow-lg">
-          {isMapView ? (
-            <Map
-            ref={mapRef}
-            mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}
-            initialViewState={{
-              longitude: -73.9862,
-              latitude: 40.6942,
-              zoom: 11
-            }}
-            onMove={e => setCurrViewState(e.viewState)}
-            onClick={handleMapClick}
-            style={{width: '100%', height: '100%'}}
-            mapStyle="mapbox://styles/sentient-ramen/cm2lfmqpq00au01p707n1dyky"
-          >
+    </div>
+
+    {/* Map View */}
+    <div className="flex-1 relative">
+      {isMapView ? (
+        <Map
+          ref={mapRef}
+          mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}
+          initialViewState={{
+            longitude: -73.9862,
+            latitude: 40.6942,
+            zoom: 11
+          }}
+          onMove={e => setCurrViewState(e.viewState)}
+          onClick={handleMapClick}
+          style={{width: '100%', height: '100%'}}
+          mapStyle="mapbox://styles/sentient-ramen/cm2lfmqpq00au01p707n1dyky"
+        >
             {filteredPoints.map((point, index) => {
               return (   
               <Marker
@@ -237,60 +258,82 @@ const MapComponent: React.FC = () => {
             )}
           </Map>
           ) : ( renderListView())}
-          
-        </div>
-        <div className="w-full md:w-1/2 bg-eggshell p-4 rounded-lg shadow-lg">
-          {newPoint ? (
-            <POIForm
-              newPoint={newPoint}
-              onSubmit={handleFormSubmit}
-              onChange={handleFormChange}
-              onCancel={cancelPointCreation}
-            />
-          ) : selectedPoint ? (
-            isUpdating ? (
-              <UpdatePOIForm
-                point={selectedPoint}
-                onSubmit={handleUpdateSubmit}
-                onChange={handleUpdateChange}
-                onCancel={() => setIsUpdating(false)}
-              />
-            ) : (
-              <>
-                <h3 className="text-xl font-semibold text-gray-800 mb-3">{selectedPoint.name}</h3>
-                <p className="text-gray-800 mb-4">{selectedPoint.description}</p>
-                <p className="text-gray-800 mb-4">Tag: {capitalize(selectedPoint.tag)}</p>
-                <div className="flex space-x-2">
-                  <button 
-                    onClick={() => setIsUpdating(true)}
-                    className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-                  >
-                    Update
-                  </button>
-                  <button 
-                    onClick={() => deletePoint(selectedPoint)}
-                    className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </>
-            )
-          ) : (
-            <>
-              <h3 className="text-xl font-semibold text-gray-800 mb-3">About This Map</h3>
-              <p className="text-gray-800">
-                This interactive map showcases key Points of Interest (POIs) in New York City. Click on any marker to view more details about the location. Click anywhere on the map to add a new point.
-              </p>
-              <ul className="mt-4 text-gray-800">
-                <li>🔴 Markers indicate POI locations</li>
-                <li>👆 Click on a marker to view details</li>
-                <li>➕ Click on the map to add a new point</li>
-                <li>🏙️ Explore the city&apos;s diverse attractions</li>
-              </ul>
-            </>
-          )}
-        </div>
+          <GuidePopup />
+          <ConfirmationDialog 
+          isOpen={showConfirmation}
+          onConfirm={handleConfirmNewPoint}
+          onCancel={handleCancelNewPoint}
+        />
+
+        {(newPoint || selectedPoint) && (
+          <div className="absolute inset-x-0 bottom-0 z-50">
+            <div className="w-full bg-white/95 backdrop-blur-sm p-4 rounded-t-lg shadow-lg">
+              {/* Add Close Button */}
+              <button 
+                onClick={() => {
+                  setNewPoint(null);
+                  setSelectedPoint(null);
+                  setTempMarker(null);
+                }}
+                className="absolute top-3 left-3 p-2 text-gray-600 hover:text-gray-800"
+              >
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  width="24" 
+                  height="24" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+
+              {/* Form/Details Content */}
+              {newPoint ? (
+                <POIForm
+                  newPoint={newPoint}
+                  onSubmit={handleFormSubmit}
+                  onChange={handleFormChange}
+                  onCancel={cancelPointCreation}
+                />
+              ) : selectedPoint ? (
+                isUpdating ? (
+                  <UpdatePOIForm
+                    point={selectedPoint}
+                    onSubmit={handleUpdateSubmit}
+                    onChange={handleUpdateChange}
+                    onCancel={() => setIsUpdating(false)}
+                  />
+                ) : (
+                  <>
+                    <h3 className="text-xl font-semibold text-gray-800 mb-3 pl-8">{selectedPoint.name}</h3>
+                    <p className="text-gray-800 mb-4">{selectedPoint.description}</p>
+                    <p className="text-gray-800 mb-4">Tag: {capitalize(selectedPoint.tag)}</p>
+                    <div className="flex space-x-2">
+                      <button 
+                        onClick={() => setIsUpdating(true)}
+                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                      >
+                        Update
+                      </button>
+                      <button 
+                        onClick={() => deletePoint(selectedPoint)}
+                        className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </>
+                )
+              ) : null}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

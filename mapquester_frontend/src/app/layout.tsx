@@ -1,9 +1,9 @@
+// src/app/layout.tsx
 'use client'
 
-// import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-
+import MobileContainer from '../components/MobileContainer';
 import { RecoilRoot } from 'recoil';
 
 const geistSans = localFont({
@@ -25,13 +25,14 @@ export default function RootLayout({
   return (
     <RecoilRoot>
       <html lang="en">
-      <head>
+        <head>
           <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet"/>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         </head>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
+        <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+          <MobileContainer>
             {children}
+          </MobileContainer>
         </body>
       </html>
     </RecoilRoot>
