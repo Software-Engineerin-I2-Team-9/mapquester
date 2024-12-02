@@ -26,37 +26,37 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup }) => {
     setIsLoading(true);
 
     try {
-    const endpoint = '/api/v1/users/signup/'
-    const response = await apiClient.post(endpoint, {
-      username: form.username,
-      email: form.email,
-      password1: form.password,
-      password2: form.confirmPassword,
-    },{
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-        setMessage(response.data.message);
-        onSignup();
-      } catch (error) {
-        const axiosError = error as { response?: { data?: { form_errors?: Record<string, string[]>, message?: string } } };
-        const errorMessage = axiosError.response?.data?.form_errors
-          ? Object.entries(axiosError.response.data.form_errors).map(([field, messages]) => {
-              return `${field}: ${messages.join(', ')}`;
-            }).join('\n')
-          : axiosError.response?.data?.message || 'An error occurred during sign up';
-        
-        alert(errorMessage);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      const endpoint = '/api/v1/users/signup/'
+      const response = await apiClient.post(endpoint, {
+        username: form.username,
+        email: form.email,
+        password1: form.password,
+        password2: form.confirmPassword,
+      },{
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      setMessage(response.data.message);
+      onSignup();
+    } catch (error) {
+      const axiosError = error as { response?: { data?: { form_errors?: Record<string, string[]>, message?: string } } };
+      const errorMessage = axiosError.response?.data?.form_errors
+        ? Object.entries(axiosError.response.data.form_errors).map(([field, messages]) => {
+            return `${field}: ${messages.join(', ')}`;
+          }).join('\n')
+        : axiosError.response?.data?.message || 'An error occurred during sign up';
+      
+      alert(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    return (
-      <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">Sign Up for MapQuester</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
+  return (
+    <div className="w-full h-full max-w-[450px] p-8 bg-white flex flex-col justify-center">
+      <h1 className="text-3xl font-bold text-center text-gray-800 mb-12">Sign Up for MapQuester</h1>
+      <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-sm mx-auto">
         <div>
           <label htmlFor="username" className="sr-only">Username</label>
           <input
@@ -67,7 +67,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup }) => {
             onChange={handleInputChange}
             placeholder="Username"
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-700 focus:outline-none focus:border-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-[#C91C1C]"
           />
         </div>
         <div>
@@ -80,7 +80,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup }) => {
             onChange={handleInputChange}
             placeholder="Email"
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-700 focus:outline-none focus:border-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-[#C91C1C]"
           />
         </div>
         <div>
@@ -93,7 +93,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup }) => {
             onChange={handleInputChange}
             placeholder="Password"
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-700 focus:outline-none focus:border-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-[#C91C1C]"
           />
         </div>
         <div>
@@ -106,13 +106,18 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup }) => {
             onChange={handleInputChange}
             placeholder="Confirm Password"
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-700 focus:outline-none focus:border-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-[#C91C1C]"
           />
         </div>
-          <button type="submit" className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-md transition duration-300">Sign Up</button>
-        </form>
-      </div>
-    )
+        <button 
+          type="submit" 
+          className="w-full py-3 px-4 bg-[#C91C1C] hover:opacity-90 text-white font-semibold rounded-lg transition-opacity"
+        >
+          Sign Up
+        </button>
+      </form>
+    </div>
+  )
 };
 
 export default SignupForm

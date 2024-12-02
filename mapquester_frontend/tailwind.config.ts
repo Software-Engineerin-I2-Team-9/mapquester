@@ -14,8 +14,10 @@ const config: Config = {
       },
       colors: {
         ...colors,
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        primary: '#C91C1C',
+        secondary: '#F8F8F8',
+        background: 'var(--background)',
+        foreground: 'var(--foreground)',
         blue: {
           100: "#E6F3FF",
           // ... other blue shades if needed ...
