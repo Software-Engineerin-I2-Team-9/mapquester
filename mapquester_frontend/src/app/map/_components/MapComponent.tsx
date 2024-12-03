@@ -53,9 +53,7 @@ const MapComponent: React.FC = () => {
   const [points, setPoints] = useState<Point[]>(initialPoints);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
   const [newPoint, setNewPoint] = useState<Partial<Point> | null>(null);
-  const [currViewState, setCurrViewState] = useState<ViewState | null>(null);
   const [newlyCreatedPoint, setNewlyCreatedPoint] = useState<Point | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string>('all');
   const [tempMarker, setTempMarker] = useState<{ longitude: number; latitude: number } | null>(null);
   const [isMapView, setIsMapView] = useState(true);
@@ -83,6 +81,22 @@ const MapComponent: React.FC = () => {
   const uniqueTags = ALL_TAGS;
   
   const [isViewTransitioning, setIsViewTransitioning] = useState(false);
+
+  const [currViewState, setCurrViewState] = useState<ViewState>({
+    longitude: -73.9862,
+    latitude: 40.6942,
+    zoom: 11,
+    pitch: 0,
+    bearing: 0,
+    padding: {
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0
+    }
+  });
+
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const toggleView = () => {
     setIsViewTransitioning(true);
@@ -154,27 +168,6 @@ const MapComponent: React.FC = () => {
       setSelectedTag('all');
     }
   }, [selectedPoint]);
-
-  const handleUpdateSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (selectedPoint) {
-      const updatedPoints = points.map(point => 
-        point.longitude === selectedPoint.longitude && point.latitude === selectedPoint.latitude
-          ? { ...selectedPoint }
-          : point
-      );
-      setPoints(updatedPoints);
-      setIsUpdating(false);
-      setSelectedTag('all');
-    }
-  };
-
-  const handleUpdateChange = (field: keyof Point, value: string) => {
-    if (selectedPoint) {
-      const updatedPoint = { ...selectedPoint, [field]: value };
-      setSelectedPoint(updatedPoint);
-    }
-  };
 
   const handleFormChange = (field: keyof Point, value: string) => {
     setNewPoint(prev => ({ ...prev, [field]: value }));

@@ -55,7 +55,7 @@ const GuidePopup: React.FC<GuidePopupProps> = ({ isOpen, onClose }) => {
               <li>🔴 Markers indicate POI locations</li>
               <li>👆 Click on a marker to view details</li>
               <li>➕ Click on the map to add a new point</li>
-              <li>🏙️ Explore the city's diverse attractions</li>
+              <li>🏙️ Explore the city&apos;s diverse attractions</li>
             </ul>
           </div>
         </div>
