@@ -42,7 +42,8 @@ def create_poi(request):
         tag = data["tag"]
         description = data["description"]
         reactions = data.get("reactions", 0)
-        content_files = data["content"]
+
+        content_files = data.get("content",[])
         print("Content: ", content_files)
     except KeyError as e:
         return Response(
