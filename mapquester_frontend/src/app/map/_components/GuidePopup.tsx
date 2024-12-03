@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react';
-import { Info } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
 interface GuidePopupProps {
   isOpen: boolean;
@@ -46,9 +45,7 @@ const GuidePopup: React.FC<GuidePopupProps> = ({ isOpen, onClose }) => {
           </h2>
           <div className="space-y-4">
             <p className="text-black">
-              This interactive map showcases key Points of Interest (POIs) in New York City.
-              Click on any marker to view more details about the location.
-              Click anywhere on the map to add a new point.
+              Let&apos;s explore points of interest (&apos;POIs&apos;) on the map.
             </p>
 
             <ul className="space-y-2 text-black">

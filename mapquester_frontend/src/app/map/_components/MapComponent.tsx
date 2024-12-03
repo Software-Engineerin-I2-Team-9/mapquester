@@ -1,8 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import Map, { Marker, ViewState, MapRef, MapMouseEvent } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import POIForm from './POIForm';
-import UpdatePOIForm from './UpdatePOIForm';
 import { Point } from '@/app/utils/types';
 import { capitalize } from '@/app/utils/fns';
 import { tagToColorMapping } from '@/app/utils/data';
@@ -82,7 +80,7 @@ const MapComponent: React.FC = () => {
   
   const [isViewTransitioning, setIsViewTransitioning] = useState(false);
 
-  const [currViewState, setCurrViewState] = useState<ViewState>({
+  const [_currViewState, setCurrViewState] = useState<ViewState>({
     longitude: -73.9862,
     latitude: 40.6942,
     zoom: 11,
@@ -96,7 +94,7 @@ const MapComponent: React.FC = () => {
     }
   });
 
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [_isUpdating, setIsUpdating] = useState(false);
 
   const toggleView = () => {
     setIsViewTransitioning(true);
@@ -171,6 +169,20 @@ const MapComponent: React.FC = () => {
 
   const handleFormChange = (field: keyof Point, value: string) => {
     setNewPoint(prev => ({ ...prev, [field]: value }));
+  };
+
+  const _handleUpdateSubmit = (updatedPoint: Point) => {
+    setPoints(points.map(p => 
+      p === selectedPoint ? updatedPoint : p
+    ));
+    setSelectedPoint(null);
+    setIsUpdating(false);
+  };
+
+  const _handleUpdateChange = (field: keyof Point, value: string) => {
+    if (selectedPoint) {
+      setSelectedPoint({ ...selectedPoint, [field]: value });
+    }
   };
 
   return (

@@ -4,17 +4,22 @@ import { useRouter } from 'next/navigation'
 import { useRecoilState } from 'recoil'
 import { authState } from './atoms/authState'
 import MapComponent from './map/_components/MapComponent'
-import LogoutButton from './login/_components/LogoutButton'
 import { useEffect } from 'react'
+
+interface AuthState {
+  isLoggedIn: boolean;
+  accessToken: string;
+  refreshToken: string;
+}
 
 const Home = () => {
   const router = useRouter()
-  const [auth, setAuth] = useRecoilState(authState)
+  const [auth, setAuth] = useRecoilState<AuthState>(authState)
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken')
     if (token) {
-      setAuth((prevAuth) => ({
+      setAuth((prevAuth: AuthState) => ({
         ...prevAuth,
         isLoggedIn: true,
         accessToken: token

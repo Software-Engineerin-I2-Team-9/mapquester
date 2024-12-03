@@ -10,11 +10,16 @@ const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
   weight: "100 900",
+  display: 'swap',
+  preload: true,
 });
+
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
   weight: "100 900",
+  display: 'swap',
+  preload: true,
 });
 
 export default function RootLayout({
@@ -24,12 +29,11 @@ export default function RootLayout({
 }>) {
   return (
     <RecoilRoot>
-      <html lang="en">
+      <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
         <head>
-          <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet"/>
           <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         </head>
-        <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-100`}>
+        <body className="antialiased bg-gray-100">
           <MobileContainer>
             {children}
           </MobileContainer>

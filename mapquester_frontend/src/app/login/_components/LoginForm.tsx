@@ -5,11 +5,10 @@ import apiClient from '@/app/api/axios';
 import Link from 'next/link';
 
 interface LoginFormProps {
-  onLogin: (accessToken: string, refreshToken: string) => void;
-  onSignup: () => void;
+  onLogin: (email: string, password: string) => void;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onSignup }) => {
+const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
   const [form, setForm] = useState({ username: '', password: '' });
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
