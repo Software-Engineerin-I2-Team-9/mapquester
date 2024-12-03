@@ -34,16 +34,16 @@ def create_poi(request):
     # Step 1: Extract and validate data
     try:
         user = User.objects.get(id=data["userId"])
-        latitude = data["latitude"]
-        longitude = data["longitude"]
-        is_public = data.get("isPublic", 1)
-        is_deleted = data.get("isDeleted", 0)
-        title = data["title"]
-        tag = data["tag"]
-        description = data["description"]
-        reactions = data.get("reactions", 0)
-        content_files = data["content"]
-        print("Content: ", content_files)
+        latitude =  data["latitude"]
+        longitude =  data["longitude"]
+        is_public =  data.get("isPublic", 1)
+        is_deleted =  data.get("isDeleted", 0)
+        title =  data["title"]
+        tag =  data["tag"]
+        description =  data["description"]
+        reactions =  data.get("reactions", 0)
+        content_files =  data.get("content", [])
+        print("Content: ",  content_files)
     except KeyError as e:
         return Response(
             {"error": f"Missing required field: {str(e)}"},
