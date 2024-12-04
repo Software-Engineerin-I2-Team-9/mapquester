@@ -5,7 +5,8 @@ import apiClient from '@/app/api/axios';
 import Link from 'next/link';
 
 interface LoginFormProps {
-  onLogin: (email: string, password: string) => void;
+  onLogin: (id: string, accessToken: string, refreshToken: string) => void;
+  onSignup: () => void;
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
@@ -39,7 +40,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
       });
 
       setMessage(response.data.message);
-      onLogin(response.data.access, response.data.refresh);
+      onLogin(response.data.id, response.data.access, response.data.refresh);
     } catch (error) {
       const axiosError = error as { response?: { data?: { error?: string, detail?: string } } };
       const errorMessage = axiosError.response?.data?.error || axiosError.response?.data?.detail || 'An error occurred during log in';

@@ -16,6 +16,7 @@ const logout = async () => {
     if (response.status === 205) {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
+      localStorage.removeItem('id');
 
       window.location.href = '/login';
     }

@@ -1,9 +1,12 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import Map, { Marker, ViewState, MapRef, MapMouseEvent } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Point } from '@/app/utils/types';
 import { capitalize } from '@/app/utils/fns';
 import { tagToColorMapping } from '@/app/utils/data';
+import apiClient from '@/app/api/axios';
+import { useRecoilState } from 'recoil';
+import { authState } from '../../atoms/authState';
 import GuidePopup from './GuidePopup';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import LogoutButton from '@/app/login/_components/LogoutButton';
@@ -39,23 +42,18 @@ const ToggleSwitch: React.FC<{ isOn: boolean; onToggle: () => void }> = ({ isOn,
   );
 };
 
-const initialPoints: Point[] = [
-  { name: 'Tandon School of Engineering', longitude: -73.9862, latitude: 40.6942, description: 'NYU\'s engineering and applied sciences campus in Brooklyn.', tag: 'school' },
-  { name: 'Brooklyn Bridge', longitude: -73.9969, latitude: 40.7061, description: 'An iconic suspension bridge connecting Manhattan and Brooklyn.', tag: 'photo' },
-  { name: 'DUMBO', longitude: -73.9877, latitude: 40.7033, description: 'A trendy neighborhood known for its cobblestone streets and artistic atmosphere.', tag: 'photo' },
-  { name: 'Prospect Park', longitude: -73.9701, latitude: 40.6602, description: 'A 526-acre urban oasis featuring diverse landscapes and recreational activities.', tag: 'photo' },
-  { name: 'NYU Manhattan Campus', longitude: -73.9965, latitude: 40.7295, description: 'The main campus of New York University, located in Greenwich Village.', tag: 'school' },
-];
-
 const MapComponent: React.FC = () => {
-  const [points, setPoints] = useState<Point[]>(initialPoints);
+  const [points, setPoints] = useState<Point[]>([]);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
   const [newPoint, setNewPoint] = useState<Partial<Point> | null>(null);
   const [newlyCreatedPoint, setNewlyCreatedPoint] = useState<Point | null>(null);
-  const [selectedTag, setSelectedTag] = useState<string>('all');
   const [tempMarker, setTempMarker] = useState<{ longitude: number; latitude: number } | null>(null);
   const [isMapView, setIsMapView] = useState(true);
   const mapRef = useRef<MapRef>(null);
+  const [auth, setAuth] = useRecoilState(authState);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+
   const ALL_TAGS = ['all', ...Object.keys(tagToColorMapping)];
 
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -71,16 +69,10 @@ const MapComponent: React.FC = () => {
 
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-
-  const filteredPoints = selectedTag === 'all' 
-    ? points 
-    : points.filter(point => point.tag === selectedTag);
-
-  const uniqueTags = ALL_TAGS;
-  
   const [isViewTransitioning, setIsViewTransitioning] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const [_currViewState, setCurrViewState] = useState<ViewState>({
+  const [currViewState, setCurrViewState] = useState<ViewState>({
     longitude: -73.9862,
     latitude: 40.6942,
     zoom: 11,
@@ -94,7 +86,45 @@ const MapComponent: React.FC = () => {
     }
   });
 
-  const [_isUpdating, setIsUpdating] = useState(false);
+  useEffect(() => {
+    const fetchPoints = async () => {
+      if (auth?.id) {
+        try {
+          const endpoint = `/api/v1/pois/get/${auth?.id}`;
+          const response = await apiClient.get(endpoint, {
+            params: {
+              viewType: isMapView ? 'map' : 'list',
+              tags: selectedTags.length === 0 ? [] : selectedTags,
+              page: currentPage,
+              page_size: 10 // Adjust as needed
+            }
+          });
+          if (currentPage === 1) {
+            setPoints(response.data.pois);
+          } else {
+            setPoints(prevPoints => [...prevPoints, ...response.data.pois]);
+          }
+          setHasMore(currentPage < response.data.pagination.total_pages);
+        } catch (error) {
+          console.error('Error fetching points:', error);
+        }
+      }
+    };
+    fetchPoints();
+  }, [auth?.id, selectedTags, isMapView, currentPage]);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop <= clientHeight * 1.5 && hasMore) {
+      loadMorePOIs();
+    }
+  };
+
+  const loadMorePOIs = () => {
+    if (hasMore) {
+      setCurrentPage(prevPage => prevPage + 1);
+    }
+  };
 
   const toggleView = () => {
     setIsViewTransitioning(true);
@@ -103,7 +133,7 @@ const MapComponent: React.FC = () => {
       setIsViewTransitioning(false);
     }, 300); // Match this with animation duration
   };
-  
+
   const handleMapClick = useCallback((event: MapMouseEvent) => {
     const { lngLat } = event;
     setPendingLocation({
@@ -127,30 +157,54 @@ const MapComponent: React.FC = () => {
     setShowConfirmation(false);
   };
 
-  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (newPoint && newPoint.name && newPoint.description) {
-      const createdPoint: Point = {
-        name: newPoint.name,
-        latitude: newPoint.latitude!,
-        longitude: newPoint.longitude!,
-        description: newPoint.description,
-        tag: newPoint.tag!,
-      };
-      setPoints([...points, createdPoint]);
-      setNewPoint(null);
-      setTempMarker(null);
-      setSelectedPoint(createdPoint);
-      setNewlyCreatedPoint(createdPoint);
-      setSelectedTag('all');
+      try {
+        const formData = new FormData();
+        formData.append('userId', auth?.id);
+        formData.append('latitude', newPoint.latitude!.toString());
+        formData.append('longitude', newPoint.longitude!.toString());
+        formData.append('title', newPoint.name);
+        formData.append('tag', newPoint.tag!);
+        formData.append('description', newPoint.description);
 
-      mapRef.current?.flyTo({
-        center: [createdPoint.longitude, createdPoint.latitude],
-        zoom: 14,
-        duration: 2000
-      });
+        const endpoint = '/api/v1/pois/create/';
+        const response = await apiClient.post(endpoint, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
 
-      setTimeout(() => setNewlyCreatedPoint(null), 3000);
+        if (response.status === 201) {
+          const createdPoint: Point = {
+            id: response.data.poi_id,
+            name: newPoint.name,
+            latitude: newPoint.latitude!,
+            longitude: newPoint.longitude!,
+            description: newPoint.description,
+            tag: newPoint.tag!,
+          };
+
+          setPoints([...points, createdPoint]);
+          setNewPoint(null);
+          setTempMarker(null);
+          setSelectedPoint(createdPoint);
+          setNewlyCreatedPoint(createdPoint);
+          setSelectedTags([]);
+
+          // Center the map on the new point
+          mapRef.current?.flyTo({
+            center: [createdPoint.longitude, createdPoint.latitude],
+            zoom: 14,
+            duration: 2000
+          });
+
+          setTimeout(() => setNewlyCreatedPoint(null), 3000);
+        }
+      } catch (error) {
+        console.error('Error creating POI:', error);
+      }
     }
   };
 
@@ -159,35 +213,66 @@ const MapComponent: React.FC = () => {
     setTempMarker(null);
   };
 
-  const deletePoint = useCallback((pointToDelete: Point) => {
-    setPoints(prevPoints => prevPoints.filter(point => point !== pointToDelete));
-    if (selectedPoint === pointToDelete) {
-      setSelectedPoint(null);
-      setSelectedTag('all');
+  const deletePoint = useCallback(async (pointToDelete: Point) => {
+    try {
+      const endpoint = `/api/v1/pois/delete/${pointToDelete.id}/`;
+      const response = await apiClient.patch(endpoint);
+
+      if (response.status === 200) {
+        setPoints(prevPoints => prevPoints.filter(point => point.id !== pointToDelete.id));
+        if (selectedPoint && selectedPoint.id === pointToDelete.id) {
+          setSelectedPoint(null);
+          setSelectedTags([]);
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting POI:', error);
     }
   }, [selectedPoint]);
 
-  const handleFormChange = (field: keyof Point, value: string) => {
-    setNewPoint(prev => ({ ...prev, [field]: value }));
-  };
-
-  const _handleUpdateSubmit = (updatedPoint: Point) => {
-    setPoints(points.map(p => 
-      p === selectedPoint ? updatedPoint : p
-    ));
-    setSelectedPoint(null);
-    setIsUpdating(false);
-  };
-
-  const _handleUpdateChange = (field: keyof Point, value: string) => {
+  const handleUpdateChange = (field: keyof Point, value: string) => {
     if (selectedPoint) {
       setSelectedPoint({ ...selectedPoint, [field]: value });
     }
   };
 
+  const handleUpdateSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (selectedPoint) {
+      try {
+        const endpoint = `/api/v1/pois/update/${selectedPoint.id}/`;
+        const updateData = {
+          title: selectedPoint.name,
+          description: selectedPoint.description,
+          tag: selectedPoint.tag,
+          latitude: selectedPoint.latitude,
+          longitude: selectedPoint.longitude
+        };
+
+        const response = await apiClient.patch(endpoint, updateData);
+
+        if (response.status === 200) {
+          const updatedPoints = points.map(point => 
+            point.id === selectedPoint.id ? { ...point, ...response.data } : point
+          );
+          setPoints(updatedPoints);
+          setSelectedPoint({ ...selectedPoint, ...response.data });
+          setIsUpdating(false);
+          setSelectedTags([]);
+        }
+      } catch (error) {
+        console.error('Error updating POI:', error);
+      }
+    }
+  };
+
+  const handleFormChange = (field: keyof Point, value: string) => {
+    setNewPoint(prev => ({ ...prev, [field]: value }));
+  };
+
   return (
     <div className="relative w-full h-full flex flex-col">
-      {/* Controls overlay - only show in map view */}
+      {/* Controls overlay */}
       {isMapView && (
         <div className="absolute top-4 z-10 w-full px-4 flex justify-between items-center">
           <div className="relative">
@@ -217,7 +302,7 @@ const MapComponent: React.FC = () => {
             {isFilterMenuOpen && (
               <div className="absolute top-12 left-0 bg-white rounded-lg shadow-lg p-3 z-50 min-w-[240px] animate-fadeIn">
                 <div className="max-h-48 overflow-y-auto mb-3 space-y-2">
-                  {uniqueTags.filter(tag => tag !== 'all').map(tag => (
+                  {ALL_TAGS.filter(tag => tag !== 'all').map(tag => (
                     <label key={tag} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
                       <input
                         type="checkbox"
@@ -239,10 +324,8 @@ const MapComponent: React.FC = () => {
                 <div className="space-y-2 pt-2 border-t border-gray-100">
                   <button
                     onClick={() => {
-                      const filteredPoints = selectedTags.length === 0 
-                        ? initialPoints 
-                        : initialPoints.filter(point => selectedTags.includes(point.tag));
-                      setPoints(filteredPoints);
+                      setCurrentPage(1);
+                      setPoints([]);
                       setIsFilterMenuOpen(false);
                     }}
                     className="w-full bg-[#C91C1C] text-white rounded-lg py-2 text-sm font-medium hover:opacity-90 transition-opacity"
@@ -252,7 +335,8 @@ const MapComponent: React.FC = () => {
                   <button
                     onClick={() => {
                       setSelectedTags([]);
-                      setPoints(initialPoints);
+                      setCurrentPage(1);
+                      setPoints([]);
                       setIsFilterMenuOpen(false);
                     }}
                     className="w-full border border-gray-300 text-gray-700 rounded-lg py-2 text-sm font-medium hover:bg-gray-50 transition-colors"
@@ -286,9 +370,9 @@ const MapComponent: React.FC = () => {
               onMove={e => setCurrViewState(e.viewState)}
               onClick={handleMapClick}
               style={{width: '100%', height: '100%'}}
-              mapStyle="mapbox://styles/mapbox/light-v10"
+              mapStyle="mapbox://styles/sentient-ramen/cm2lfmqpq00au01p707n1dyky"
             >
-              {filteredPoints.map((point, index) => (   
+              {points.map((point, index) => (   
                 <Marker
                   key={index}
                   longitude={point.longitude}
@@ -343,7 +427,7 @@ const MapComponent: React.FC = () => {
         ) : (
           <div className={`absolute inset-0 ${isViewTransitioning ? 'view-transition-exit' : 'view-transition-enter'}`}>
             {/* List View Content */}
-            <div className="h-full bg-gray-50">
+            <div className="h-full bg-gray-50" onScroll={handleScroll}>
               {/* List view header */}
               <div className="sticky top-0 w-full px-4 py-3 flex justify-between items-center bg-white shadow-sm z-10">
                 <div className="relative">
@@ -372,7 +456,7 @@ const MapComponent: React.FC = () => {
                   {isFilterMenuOpen && (
                     <div className="absolute top-12 left-0 bg-white rounded-lg shadow-lg p-3 z-50 min-w-[240px] animate-fadeIn">
                       <div className="max-h-48 overflow-y-auto mb-3 space-y-2">
-                        {uniqueTags.filter(tag => tag !== 'all').map(tag => (
+                        {ALL_TAGS.filter(tag => tag !== 'all').map(tag => (
                           <label key={tag} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
                             <input
                               type="checkbox"
@@ -394,10 +478,8 @@ const MapComponent: React.FC = () => {
                       <div className="space-y-2 pt-2 border-t border-gray-100">
                         <button
                           onClick={() => {
-                            const filteredPoints = selectedTags.length === 0 
-                              ? initialPoints 
-                              : initialPoints.filter(point => selectedTags.includes(point.tag));
-                            setPoints(filteredPoints);
+                            setCurrentPage(1);
+                            setPoints([]);
                             setIsFilterMenuOpen(false);
                           }}
                           className="w-full bg-[#C91C1C] text-white rounded-lg py-2 text-sm font-medium hover:opacity-90 transition-opacity"
@@ -407,7 +489,8 @@ const MapComponent: React.FC = () => {
                         <button
                           onClick={() => {
                             setSelectedTags([]);
-                            setPoints(initialPoints);
+                            setCurrentPage(1);
+                            setPoints([]);
                             setIsFilterMenuOpen(false);
                           }}
                           className="w-full border border-gray-300 text-gray-700 rounded-lg py-2 text-sm font-medium hover:bg-gray-50 transition-colors"
@@ -424,7 +507,7 @@ const MapComponent: React.FC = () => {
               {/* List content */}
               <div className="flex-1 overflow-y-auto">
                 <div className="space-y-2 p-4">
-                  {filteredPoints.map((point, index) => (
+                  {points.map((point, index) => (
                     <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
                       <div className="p-3 flex justify-between items-center">
                         <div className="flex items-center space-x-2">
@@ -445,6 +528,11 @@ const MapComponent: React.FC = () => {
                       </div>
                     </div>
                   ))}
+                  {hasMore && (
+                    <div className="text-center py-4">
+                      <span className="text-gray-600">Loading more POIs...</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -502,7 +590,7 @@ const MapComponent: React.FC = () => {
                       className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#C91C1C] focus:border-[#C91C1C] sm:text-sm"
                     >
                       <option value="" disabled>Select your option</option>
-                      {uniqueTags.map(tag => (
+                      {ALL_TAGS.filter(tag => tag !== 'all').map(tag => (
                         <option key={tag} value={tag}>
                           {capitalize(tag)}
                         </option>
@@ -551,23 +639,79 @@ const MapComponent: React.FC = () => {
                 >
                   &times;
                 </button>
-                <h3 className="text-xl font-semibold text-gray-800 mb-3">{selectedPoint.name}</h3>
-                <p className="text-gray-800 mb-4">{selectedPoint.description}</p>
-                <p className="text-gray-800 mb-4">Tag: {capitalize(selectedPoint.tag)}</p>
-                <div className="flex space-x-2">
-                  <button 
-                    onClick={() => setIsUpdating(true)}
-                    className="bg-[#C91C1C] hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-                  >
-                    Update
-                  </button>
-                  <button 
-                    onClick={() => deletePoint(selectedPoint)}
-                    className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
-                  >
-                    Delete
-                  </button>
-                </div>
+                {isUpdating ? (
+                  <form onSubmit={handleUpdateSubmit}>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Name</label>
+                        <input
+                          type="text"
+                          value={selectedPoint.name}
+                          onChange={(e) => handleUpdateChange('name', e.target.value)}
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#C91C1C] focus:border-[#C91C1C] sm:text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Tag</label>
+                        <select
+                          value={selectedPoint.tag}
+                          onChange={(e) => handleUpdateChange('tag', e.target.value)}
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#C91C1C] focus:border-[#C91C1C] sm:text-sm"
+                        >
+                          {ALL_TAGS.filter(tag => tag !== 'all').map(tag => (
+                            <option key={tag} value={tag}>
+                              {capitalize(tag)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Description</label>
+                        <textarea
+                          value={selectedPoint.description}
+                          onChange={(e) => handleUpdateChange('description', e.target.value)}
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#C91C1C] focus:border-[#C91C1C] sm:text-sm"
+                          rows={3}
+                        />
+                      </div>
+                      <div className="flex justify-end space-x-2">
+                        <button
+                          type="submit"
+                          className="bg-[#C91C1C] hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full"
+                        >
+                          Save Changes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsUpdating(false)}
+                          className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <h3 className="text-xl font-semibold text-gray-800 mb-3">{selectedPoint.name}</h3>
+                    <p className="text-gray-800 mb-4">{selectedPoint.description}</p>
+                    <p className="text-gray-800 mb-4">Tag: {capitalize(selectedPoint.tag)}</p>
+                    <div className="flex space-x-2">
+                      <button 
+                        onClick={() => setIsUpdating(true)}
+                        className="bg-[#C91C1C] hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                      >
+                        Update
+                      </button>
+                      <button 
+                        onClick={() => deletePoint(selectedPoint)}
+                        className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </>
+                )}
               </>
             ) : null}
           </div>

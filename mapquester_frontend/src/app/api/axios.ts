@@ -71,6 +71,7 @@ async (error: AxiosError): Promise<any> => {
         // Handle token refresh errors (e.g., log out the user)
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        localStorage.removeItem('id');
         window.location.href = '/login';
         return Promise.reject(refreshError);
         }
