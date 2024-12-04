@@ -52,7 +52,7 @@ jobs:
     - name: Deploy to Elastic Beanstalk
       env:
         EB_APPLICATION: mapquester-backend
-        EB_ENVIRONMENT: MapquesterBackend-env
+        EB_ENVIRONMENT: mapquester-backend-prod
         DEPLOY_VERSION: ${{ steps.get_version.outputs.VERSION }}
       run: |
         cd mapquester_backend
