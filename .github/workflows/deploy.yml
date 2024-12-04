@@ -50,8 +50,13 @@ jobs:
     
     - name: Deploy to Elastic Beanstalk
       env:
+<<<<<<< Updated upstream
         EB_APPLICATION: mapquester-backend  # Replace with your EB application name
         EB_ENVIRONMENT: mapquester-backend-prod  # Replace with your EB environment name
+=======
+        EB_APPLICATION: mapquester-backend
+        EB_ENVIRONMENT: mapquester-backend-prod
+>>>>>>> Stashed changes
         DEPLOY_VERSION: ${{ steps.get_version.outputs.VERSION }}
       run: |
         # Ensure we're in the correct context
