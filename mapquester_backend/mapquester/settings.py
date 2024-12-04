@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "users",
     "pois",
-    "mapView",
+    "health",
     "filters",
     "corsheaders",
     "rest_framework",
