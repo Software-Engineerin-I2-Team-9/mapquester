@@ -17,7 +17,7 @@ def signup(request):
         return Response(
             {
                 "message": f"Account created successfully for {user.username}!",
-                "details": "Please log in to access p your account.",
+                "details": "Please log in to access your account.",
             },
             status=status.HTTP_201_CREATED,
         )

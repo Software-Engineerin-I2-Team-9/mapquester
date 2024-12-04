@@ -5,7 +5,9 @@ from users.models import User
 
 class POI(models.Model):
     id = models.AutoField(primary_key=True)
-    userId = models.ForeignKey(User, on_delete=models.CASCADE, db_column='userId')  # db_column is set explicitly, if not Django will append _id to the name, which will become userId_id
+    userId = models.ForeignKey(
+        User, on_delete=models.CASCADE, db_column="userId"
+    )  # db_column is set explicitly, if not Django will append _id to the name, which will become userId_id
     latitude = models.DecimalField(
         max_digits=9, decimal_places=6
     )  # Decimal for more precision in coordinates
