@@ -24,26 +24,6 @@ const POIForm: React.FC<POIFormProps> = ({ newPoint, onSubmit, onChange, onCance
             required
           />
         </div>
-        {/*<div>
-          <label htmlFor="latitude" className="block text-sm font-medium text-gray-300">Latitude</label>
-          <input
-            type="number"
-            id="latitude"
-            value={newPoint.latitude}
-            readOnly
-            className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white"
-          />
-        </div>
-        <div>
-          <label htmlFor="longitude" className="block text-sm font-medium text-gray-300">Longitude</label>
-          <input
-            type="number"
-            id="longitude"
-            value={newPoint.longitude}
-            readOnly
-            className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white"
-          />
-        </div>*/}
         <div>
           <label htmlFor="tag" className="block text-sm font-medium text-gray-800">Tag</label>
           <select

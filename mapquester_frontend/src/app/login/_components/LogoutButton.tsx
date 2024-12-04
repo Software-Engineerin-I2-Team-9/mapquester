@@ -4,7 +4,6 @@ import apiClient from '@/app/api/axios';
 const logout = async () => {
   try {
     const refreshToken = localStorage.getItem('refreshToken');
-    console.log(refreshToken)
 
     const response = await apiClient.post('/api/v1/users/logout/', {
       refresh_token: refreshToken
@@ -21,8 +20,8 @@ const logout = async () => {
 
       window.location.href = '/login';
     }
-  } catch (error) {
-    console.error('Logout failed:', error);
+  } catch {
+    // Silently handle the error or implement proper error handling if needed
   }
 };
 
@@ -32,7 +31,12 @@ function LogoutButton() {
   };
 
   return (
-    <button className="py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded transition duration-300 shadow-md" onClick={handleLogout}>Logout</button>
+    <button 
+      className="py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded transition duration-300 shadow-md" 
+      onClick={handleLogout}
+    >
+      Logout
+    </button>
   );
 }
 
