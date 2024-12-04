@@ -66,12 +66,12 @@ jobs:
         # Deploy with a clean version label
         eb deploy $EB_ENVIRONMENT --label "$LABEL"
     
-    - name: Deployment Notification
-      if: success()
-      uses: 8398a7/action-slack@v3
-      with:
-        status: ${{ job.status }}
-        text: Deployment of MapQuester Backend to Elastic Beanstalk successful! 🚀
-        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # - name: Deployment Notification
+    #   if: success()
+    #   uses: 8398a7/action-slack@v3
+    #   with:
+    #     status: ${{ job.status }}
+    #     text: Deployment of MapQuester Backend to Elastic Beanstalk successful! 🚀
+    #     webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
