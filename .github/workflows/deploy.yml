@@ -58,7 +58,7 @@ jobs:
         cd mapquester_backend
         
         # Initialize EB if not already done
-        eb init -r us-east-1 -p python-3.10 $EB_APPLICATION
+        eb init -r us-west-2 -p python-3.12 $EB_APPLICATION
         
         # Use and deploy to specific environment
         eb use $EB_ENVIRONMENT
