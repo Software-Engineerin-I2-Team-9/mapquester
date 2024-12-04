@@ -4,5 +4,5 @@ from . import views
 
 urlpatterns = [
     # Define the paths for map view functionalities
-    path("root_view/", views.root_view, name="root_view"),
+    path("", views.health, name="health"),
 ]
