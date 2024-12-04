@@ -19,7 +19,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: '3.12'
     
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -60,7 +60,7 @@ jobs:
         # Create a deployment-friendly version label
         LABEL=$(echo "$DEPLOY_VERSION" | cut -c1-100)
         
-        eb init -r us-west-2 -p python-3.10 $EB_APPLICATION
+        eb init -r us-west-2 -p python-3.12 $EB_APPLICATION
         eb use $EB_ENVIRONMENT
         
         # Deploy with a clean version label
