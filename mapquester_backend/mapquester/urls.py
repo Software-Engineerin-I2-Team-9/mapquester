@@ -23,6 +23,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/users/", include("users.urls")),
     path("api/v1/pois/", include("pois.urls")),
+    path("/", include("health.urls")),
     #     path('apis/map/', include('mapView.urls')), # TODO: mapViews will be a subset of pois
     #     path('filters/', include('filters.urls')), # TODO: filters will be a subset of pois
 ]
