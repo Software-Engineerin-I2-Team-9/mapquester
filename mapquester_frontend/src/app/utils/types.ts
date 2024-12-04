@@ -1,6 +1,6 @@
 export interface Point {
     id: string;
-    name: string;
+    title: string;
     longitude: number;
     latitude: number;
     description: string;

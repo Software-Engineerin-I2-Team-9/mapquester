@@ -9,40 +9,13 @@ import { useRecoilState } from 'recoil';
 import { authState } from '../../atoms/authState';
 import GuidePopup from './GuidePopup';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
-import LogoutButton from '@/app/login/_components/LogoutButton';
-
-const ToggleSwitch: React.FC<{ isOn: boolean; onToggle: () => void }> = ({ isOn, onToggle }) => {
-  return (
-    <div
-      className={`w-24 h-10 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 bg-[#C91C1C] relative`}
-      onClick={onToggle}
-    >
-      {/* White circle with smooth transition */}
-      <div
-        className={`bg-white w-8 h-8 rounded-full shadow-md transform transition-all duration-300 ease-in-out absolute ${
-          isOn ? 'translate-x-14' : 'translate-x-0'
-        }`}
-      />
-      {/* Text labels with fade transition */}
-      <span 
-        className={`text-white text-sm font-medium absolute transition-all duration-300 ${
-          isOn ? 'left-3 opacity-100' : 'left-3 opacity-0'
-        }`}
-      >
-        List
-      </span>
-      <span 
-        className={`text-white text-sm font-medium absolute transition-all duration-300 ${
-          !isOn ? 'right-3 opacity-100' : 'right-3 opacity-0'
-        }`}
-      >
-        Map
-      </span>
-    </div>
-  );
-};
+import Navbar from './NavBar';
+import { useRouter } from 'next/navigation';
 
 const MapComponent: React.FC = () => {
+  const router = useRouter();
+  const listViewRef = useRef<HTMLDivElement>(null);
+
   const [points, setPoints] = useState<Point[]>([]);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
   const [newPoint, setNewPoint] = useState<Partial<Point> | null>(null);
@@ -87,36 +60,65 @@ const MapComponent: React.FC = () => {
   });
 
   useEffect(() => {
+    console.log("Fetching...")
     const fetchPoints = async () => {
-      if (auth?.id) {
-        try {
-          const endpoint = `/api/v1/pois/get/${auth?.id}`;
-          const response = await apiClient.get(endpoint, {
-            params: {
-              viewType: isMapView ? 'map' : 'list',
-              tags: selectedTags.length === 0 ? [] : selectedTags,
-              page: currentPage,
-              page_size: 10 // Adjust as needed
-            }
-          });
-          if (currentPage === 1) {
-            setPoints(response.data.pois);
-          } else {
-            setPoints(prevPoints => [...prevPoints, ...response.data.pois]);
-          }
-          setHasMore(currentPage < response.data.pagination.total_pages);
-        } catch (error) {
-          console.error('Error fetching points:', error);
+      if (!auth?.id) return; // Ensure auth ID exists
+  
+      try {
+        const endpoint = `/api/v1/pois/get/${auth.id}`;
+        const response = await apiClient.get(endpoint, {
+          params: {
+            viewType: isMapView ? 'map' : 'list',
+            tags: selectedTags,
+            ...(isMapView ? {} : { page: currentPage, page_size: 10 }), // Include pagination only for list view
+          },
+          paramsSerializer: (params) => {
+            const queryString = new URLSearchParams();
+            Object.entries(params).forEach(([key, value]) => {
+              if (Array.isArray(value)) {
+                value.forEach((val) => queryString.append(key, val));
+              } else if (value !== undefined) {
+                queryString.append(key, value);
+              }
+            });
+            return queryString.toString();
+          },
+        });
+  
+        if (isMapView) {
+          // For map view, replace points directly
+          setPoints(response.data.pois || []); // Ensure points are cleared if response is empty
+        } else {
+          // For list view, handle pagination
+          setPoints((prevPoints) =>
+            currentPage === 1
+              ? response.data.pois
+              : [...prevPoints, ...response.data.pois]
+          );
+          setHasMore(currentPage < (response.data.pagination?.total_pages || 0)); // Ensure pagination exists
         }
+      } catch (error) {
+        console.error('Error fetching points:', error);
       }
     };
+  
     fetchPoints();
   }, [auth?.id, selectedTags, isMapView, currentPage]);
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollHeight - scrollTop <= clientHeight * 1.5 && hasMore) {
-      loadMorePOIs();
+  useEffect(() => {
+    console.log("Fetching points for page:", currentPage, "Tags:", selectedTags);
+  }, [currentPage, selectedTags]);
+  
+  const handleScroll = () => {
+    if (listViewRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = listViewRef.current;
+      console.log("Scroll details:", { scrollTop, scrollHeight, clientHeight });
+  
+      // Trigger loading more data when near the bottom
+      if (scrollHeight - scrollTop <= clientHeight * 1.5 && hasMore) {
+        console.log("Triggered loadMorePOIs");
+        loadMorePOIs();
+      }
     }
   };
 
@@ -159,13 +161,13 @@ const MapComponent: React.FC = () => {
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (newPoint && newPoint.name && newPoint.description) {
+    if (newPoint && newPoint.title && newPoint.description) {
       try {
         const formData = new FormData();
         formData.append('userId', auth?.id);
         formData.append('latitude', newPoint.latitude!.toString());
         formData.append('longitude', newPoint.longitude!.toString());
-        formData.append('title', newPoint.name);
+        formData.append('title', newPoint.title);
         formData.append('tag', newPoint.tag!);
         formData.append('description', newPoint.description);
 
@@ -179,7 +181,7 @@ const MapComponent: React.FC = () => {
         if (response.status === 201) {
           const createdPoint: Point = {
             id: response.data.poi_id,
-            name: newPoint.name,
+            title: newPoint.title,
             latitude: newPoint.latitude!,
             longitude: newPoint.longitude!,
             description: newPoint.description,
@@ -238,25 +240,32 @@ const MapComponent: React.FC = () => {
 
   const handleUpdateSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    console.log("Selected point: ",selectedPoint)
     if (selectedPoint) {
       try {
         const endpoint = `/api/v1/pois/update/${selectedPoint.id}/`;
         const updateData = {
-          title: selectedPoint.name,
+          title: selectedPoint.title,
           description: selectedPoint.description,
           tag: selectedPoint.tag,
           latitude: selectedPoint.latitude,
-          longitude: selectedPoint.longitude
+          longitude: selectedPoint.longitude,
         };
-
+  
         const response = await apiClient.patch(endpoint, updateData);
-
+  
         if (response.status === 200) {
-          const updatedPoints = points.map(point => 
-            point.id === selectedPoint.id ? { ...point, ...response.data } : point
+          // Create a new points array with the updated data
+          setPoints((prevPoints) =>
+            prevPoints.map((point) =>
+              point.id === selectedPoint.id ? { ...point, ...response.data } : point
+            )
           );
-          setPoints(updatedPoints);
-          setSelectedPoint({ ...selectedPoint, ...response.data });
+          setSelectedPoint((prevPoint) => ({
+            ...prevPoint!,
+            ...response.data,
+          }));
           setIsUpdating(false);
           setSelectedTags([]);
         }
@@ -265,94 +274,46 @@ const MapComponent: React.FC = () => {
       }
     }
   };
+  
 
   const handleFormChange = (field: keyof Point, value: string) => {
     setNewPoint(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleTagChange = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+    if (listViewRef.current) {
+      listViewRef.current.scrollTop = 0;
+    }
+    if (!isMapView) setCurrentPage(1);
+  };
+
+  const handleResetFilters = () => {
+    setSelectedTags([]);
+    setPoints([]);
+    setIsFilterMenuOpen(false);
+    if (!isMapView) setCurrentPage(1);
+  };
+
+  const handleToggleFilterMenu = () => {
+    setIsFilterMenuOpen((prev) => !prev);
+  };
+
   return (
     <div className="relative w-full h-full flex flex-col">
       {/* Controls overlay */}
-      {isMapView && (
-        <div className="absolute top-4 z-10 w-full px-4 flex justify-between items-center">
-          <div className="relative">
-            {/* Filter button and menu */}
-            <button 
-              onClick={() => setIsFilterMenuOpen(prev => !prev)}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
-                isFilterMenuOpen ? 'bg-blue-50 text-blue-600' : 'bg-white'
-              } border border-gray-300 hover:bg-gray-50 transition-colors duration-200`}
-            >
-              <svg 
-                className="w-5 h-5" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" 
-                />
-              </svg>
-              <span className="text-sm font-medium">Filter</span>
-            </button>
-            {/* Filter menu dropdown */}
-            {isFilterMenuOpen && (
-              <div className="absolute top-12 left-0 bg-white rounded-lg shadow-lg p-3 z-50 min-w-[240px] animate-fadeIn">
-                <div className="max-h-48 overflow-y-auto mb-3 space-y-2">
-                  {ALL_TAGS.filter(tag => tag !== 'all').map(tag => (
-                    <label key={tag} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedTags.includes(tag)}
-                        onChange={() => {
-                          setSelectedTags(prev => 
-                            prev.includes(tag) 
-                              ? prev.filter(t => t !== tag)
-                              : [...prev, tag]
-                          );
-                        }}
-                        className="rounded border-gray-300 text-[#C91C1C] focus:ring-[#C91C1C]"
-                      />
-                      <span className="text-sm text-gray-700">{capitalize(tag)}</span>
-                    </label>
-                  ))}
-                </div>
-                
-                <div className="space-y-2 pt-2 border-t border-gray-100">
-                  <button
-                    onClick={() => {
-                      setCurrentPage(1);
-                      setPoints([]);
-                      setIsFilterMenuOpen(false);
-                    }}
-                    className="w-full bg-[#C91C1C] text-white rounded-lg py-2 text-sm font-medium hover:opacity-90 transition-opacity"
-                  >
-                    Apply Filters
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedTags([]);
-                      setCurrentPage(1);
-                      setPoints([]);
-                      setIsFilterMenuOpen(false);
-                    }}
-                    className="w-full border border-gray-300 text-gray-700 rounded-lg py-2 text-sm font-medium hover:bg-gray-50 transition-colors"
-                  >
-                    Reset Filters
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-          <div>
-            <ToggleSwitch isOn={!isMapView} onToggle={toggleView} />
-          </div>
-          <LogoutButton />
-        </div>
-      )}
+      <Navbar
+        isMapView={isMapView}
+        isFilterMenuOpen={isFilterMenuOpen}
+        onToggleView={toggleView}
+        onToggleFilterMenu={handleToggleFilterMenu}
+        onResetFilters={handleResetFilters}
+        selectedTags={selectedTags}
+        onTagChange={handleTagChange}
+        tags={ALL_TAGS.filter((tag) => tag !== 'all')}
+      />
 
       {/* View container with transitions */}
       <div className="flex-1 relative">
@@ -390,7 +351,7 @@ const MapComponent: React.FC = () => {
                   >
                     <div className="flex flex-col items-center">
                       <div className="text-xs font-bold text-eggshell bg-black bg-opacity-50 px-1 rounded mb-1">
-                        {point.name}
+                        {point.title}
                       </div>
                       <div 
                         style={{backgroundColor: `${newlyCreatedPoint === point ? null : tagToColorMapping[point.tag]}`}} 
@@ -425,136 +386,93 @@ const MapComponent: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className={`absolute inset-0 ${isViewTransitioning ? 'view-transition-exit' : 'view-transition-enter'}`}>
-            {/* List View Content */}
-            <div className="h-full bg-gray-50" onScroll={handleScroll}>
-              {/* List view header */}
-              <div className="sticky top-0 w-full px-4 py-3 flex justify-between items-center bg-white shadow-sm z-10">
-                <div className="relative">
-                  {/* Same filter button and menu code as above */}
-                  <button 
-                    onClick={() => setIsFilterMenuOpen(prev => !prev)}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
-                      isFilterMenuOpen ? 'bg-blue-50 text-blue-600' : 'bg-white'
-                    } border border-gray-300 hover:bg-gray-50 transition-colors duration-200`}
-                  >
-                    <svg 
-                      className="w-5 h-5" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
-                        strokeWidth={2} 
-                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" 
-                      />
-                    </svg>
-                    <span className="text-sm font-medium">Filter</span>
-                  </button>
-                  {isFilterMenuOpen && (
-                    <div className="absolute top-12 left-0 bg-white rounded-lg shadow-lg p-3 z-50 min-w-[240px] animate-fadeIn">
-                      <div className="max-h-48 overflow-y-auto mb-3 space-y-2">
-                        {ALL_TAGS.filter(tag => tag !== 'all').map(tag => (
-                          <label key={tag} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={selectedTags.includes(tag)}
-                              onChange={() => {
-                                setSelectedTags(prev => 
-                                  prev.includes(tag) 
-                                    ? prev.filter(t => t !== tag)
-                                    : [...prev, tag]
-                                );
+          <div className={`absolute inset-0 flex flex-col ${isViewTransitioning ? 'view-transition-exit' : 'view-transition-enter'}`}>
+  {/* List View Content */}
+  <div ref={listViewRef} className="flex-1 overflow-y-auto bg-gray-50" onScroll={handleScroll}>
+                <div className="space-y-2 p-4">
+                  {!points.length ? (
+                    <div className="animate-pulse space-y-2">
+                      {Array(3).fill(null).map((_, index) => (
+                        <div key={index} className="bg-gray-200 h-10 rounded"></div>
+                      ))}
+                    </div>
+                  ) : (
+                    points.map((point, index) => {
+                      return (
+                      
+                        <div
+                        key={index}
+                        className="card bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"
+                      >
+                        <div className="p-3">
+                          <div className="flex justify-between items-start">
+                          <div className="space-y-2">
+                            <div className='flex space-x-2'>
+                            <h3 className="text-base font-medium text-gray-800">
+                              {point.title}
+                            </h3>
+                            <span
+                              className="inline-block px-2 py-1 text-xs font-medium rounded-full text-white"
+                              style={{
+                                backgroundColor: tagToColorMapping[point.tag],
                               }}
-                              className="rounded border-gray-300 text-[#C91C1C] focus:ring-[#C91C1C]"
-                            />
-                            <span className="text-sm text-gray-700">{capitalize(tag)}</span>
-                          </label>
-                        ))}
+                            >
+                              {point.tag}
+                            </span>
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              {point.description}
+                            </p>
+                          </div>
+
+                          </div>
+                          <div className="mt-4">
+                            <button
+                              onClick={() => setSelectedPoint(point)}
+                              className="w-full hover-button bg-[#C91C1C] text-white text-sm font-medium px-4 py-2 rounded"
+                            >
+                              View Details
+                            </button>
+                          </div>
+                        </div>
                       </div>
                       
-                      <div className="space-y-2 pt-2 border-t border-gray-100">
-                        <button
-                          onClick={() => {
-                            setCurrentPage(1);
-                            setPoints([]);
-                            setIsFilterMenuOpen(false);
-                          }}
-                          className="w-full bg-[#C91C1C] text-white rounded-lg py-2 text-sm font-medium hover:opacity-90 transition-opacity"
-                        >
-                          Apply Filters
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedTags([]);
-                            setCurrentPage(1);
-                            setPoints([]);
-                            setIsFilterMenuOpen(false);
-                          }}
-                          className="w-full border border-gray-300 text-gray-700 rounded-lg py-2 text-sm font-medium hover:bg-gray-50 transition-colors"
-                        >
-                          Reset Filters
-                        </button>
-                      </div>
-                    </div>
+                    )})
                   )}
-                </div>
-                <ToggleSwitch isOn={!isMapView} onToggle={toggleView} />
-                <LogoutButton />
-              </div>
-              {/* List content */}
-              <div className="flex-1 overflow-y-auto">
-                <div className="space-y-2 p-4">
-                  {points.map((point, index) => (
-                    <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-                      <div className="p-3 flex justify-between items-center">
-                        <div className="flex items-center space-x-2">
-                          <h3 className="text-base font-medium text-gray-800">
-                            {point.name}
-                          </h3>
-                          <span 
-                            className="inline-block w-2 h-2 rounded-full"
-                            style={{ backgroundColor: tagToColorMapping[point.tag] }}
-                          />
-                        </div>
-                        <button
-                          onClick={() => setSelectedPoint(point)}
-                          className="bg-[#C91C1C] hover:opacity-90 transition-opacity text-white text-sm font-medium px-4 py-1.5 rounded"
-                        >
-                          View Details
-                        </button>
-                      </div>
-                    </div>
-                  ))}
                   {hasMore && (
                     <div className="text-center py-4">
-                      <span className="text-gray-600">Loading more POIs...</span>
+                      <span className="text-gray-600 animate-pulse">Loading more POIs...</span>
                     </div>
                   )}
                 </div>
               </div>
             </div>
-          </div>
         )}
       </div>
 
       {/* Footer Navigation */}
-      <div className="h-[60px] bg-white border-t border-gray-200 flex justify-around items-center px-4 w-full mt-auto">
+      <div className="h-[60px] bg-white border-t border-gray-200 flex justify-around items-center px-4 w-full">
         <button className="flex flex-col items-center text-[#C91C1C]">
           <span className="text-sm">Explore</span>
         </button>
         <button className="flex flex-col items-center text-gray-400">
           <span className="text-sm">Saved POI</span>
         </button>
-        <button className="flex flex-col items-center text-gray-400">
-          <span className="text-sm">Button 3</span>
+        <button
+          className="flex flex-col items-center text-gray-400"
+          onClick={() => {
+            
+            router.push('/settings');
+          }}
+        >
+          <span className="text-sm">Settings</span>
         </button>
+
       </div>
 
       {/* Modals and popups */}
       <GuidePopup isOpen={showGuide} onClose={() => setShowGuide(false)} />
+      
       <ConfirmationDialog 
         isOpen={showConfirmation}
         onConfirm={handleConfirmNewPoint}
@@ -573,12 +491,12 @@ const MapComponent: React.FC = () => {
               <form onSubmit={handleFormSubmit}>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Name</label>
+                    <label className="block text-sm font-medium text-gray-700">Title</label>
                     <input
                       type="text"
                       placeholder="Enter name"
-                      value={newPoint.name || ''}
-                      onChange={(e) => handleFormChange('name', e.target.value)}
+                      value={newPoint.title || ''}
+                      onChange={(e) => handleFormChange('title', e.target.value)}
                       className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#C91C1C] focus:border-[#C91C1C] sm:text-sm"
                     />
                   </div>
@@ -643,11 +561,11 @@ const MapComponent: React.FC = () => {
                   <form onSubmit={handleUpdateSubmit}>
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Name</label>
+                        <label className="block text-sm font-medium text-gray-700">Title</label>
                         <input
                           type="text"
-                          value={selectedPoint.name}
-                          onChange={(e) => handleUpdateChange('name', e.target.value)}
+                          value={selectedPoint.title}
+                          onChange={(e) => handleUpdateChange('title', e.target.value)}
                           className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#C91C1C] focus:border-[#C91C1C] sm:text-sm"
                         />
                       </div>
@@ -693,7 +611,7 @@ const MapComponent: React.FC = () => {
                   </form>
                 ) : (
                   <>
-                    <h3 className="text-xl font-semibold text-gray-800 mb-3">{selectedPoint.name}</h3>
+                    <h3 className="text-xl font-semibold text-gray-800 mb-3">{selectedPoint.title}</h3>
                     <p className="text-gray-800 mb-4">{selectedPoint.description}</p>
                     <p className="text-gray-800 mb-4">Tag: {capitalize(selectedPoint.tag)}</p>
                     <div className="flex space-x-2">

@@ -8,6 +8,7 @@ import { useEffect } from 'react'
 
 interface AuthState {
   isLoggedIn: boolean;
+  id: string;
   accessToken: string;
   refreshToken: string;
 }
