@@ -19,50 +19,52 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.12'  # Adjust to your project's Python version
+        python-version: '3.10'
     
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-west-2  # Replace with your AWS region
+        aws-region: us-east-1
     
     - name: Install EB CLI
       run: |
         python -m pip install --upgrade pip
         pip install awsebcli
     
-    - name: Extract version from tag
+    - name: Extract and Sanitize Version
       id: get_version
-      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      run: |
+        # Extract version, remove 'refs/tags/v' prefix, and sanitize
+        RAW_VERSION="${GITHUB_REF#refs/tags/v}"
+        # Remove any characters that might cause issues
+        CLEAN_VERSION=$(echo "$RAW_VERSION" | sed 's/[^a-zA-Z0-9.-]/_/g')
+        echo "VERSION=$CLEAN_VERSION" >> $GITHUB_OUTPUT
+        echo "Cleaned version: $CLEAN_VERSION"
     
     - name: Prepare Backend Deployment Package
       run: |
-        # Change to the backend directory
         cd mapquester_backend
-        
-        # Create a deployment package (ZIP)
         zip -r ../deploy.zip . -x '.git*' -x '.github*'
-        
-        # Return to root directory
         cd ..
     
     - name: Deploy to Elastic Beanstalk
       env:
-        EB_APPLICATION: mapquester-backend  # Replace with your EB application name
-        EB_ENVIRONMENT: mapquester-backend-prod  # Replace with your EB environment name
+        EB_APPLICATION: mapquester-backend
+        EB_ENVIRONMENT: MapquesterBackend-env
         DEPLOY_VERSION: ${{ steps.get_version.outputs.VERSION }}
       run: |
-        # Ensure we're in the correct context
         cd mapquester_backend
         
-        # Initialize EB if not already done
-        eb init -r us-west-2 -p python-3.12 $EB_APPLICATION
+        # Create a deployment-friendly version label
+        LABEL=$(echo "$DEPLOY_VERSION" | cut -c1-100)
         
-        # Use and deploy to specific environment
+        eb init -r us-east-1 -p python-3.10 $EB_APPLICATION
         eb use $EB_ENVIRONMENT
-        eb deploy $EB_ENVIRONMENT --label $DEPLOY_VERSION
+        
+        # Deploy with a clean version label
+        eb deploy $EB_ENVIRONMENT --label "$LABEL"
     
     - name: Deployment Notification
       if: success()
