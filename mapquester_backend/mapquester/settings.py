@@ -16,6 +16,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from datetime import timedelta
+from django.http import HttpResponse
 
 
 # Load environment variables from .env file
@@ -34,7 +35,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "mapquester-backend-prod.eba-pcmxssii.us-west-2.elasticbeanstalk.com"]
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
 
 
 # Application definition
@@ -188,3 +189,6 @@ AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
 AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME")
 AWS_S3_PRESIGNED_URL_TIME = os.getenv("AWS_S3_PRESIGNED_URL_TIME")
+
+def health_check(request):
+    return HttpResponse("OK", status=200)
