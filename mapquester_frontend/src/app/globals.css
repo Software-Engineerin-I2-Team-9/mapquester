@@ -60,12 +60,14 @@ body {
 
 @keyframes slideIn {
   from {
-    transform: translateY(-20px);
+    transform: translate(-50%, -45%);
     opacity: 0;
+    scale: 0.95;
   }
   to {
-    transform: translateY(0);
+    transform: translate(-50%, -50%);
     opacity: 1;
+    scale: 1;
   }
 }
 
@@ -80,12 +82,14 @@ body {
 
 @keyframes slideOut {
   from {
-    transform: translateY(0);
+    transform: translate(-50%, -50%);
     opacity: 1;
+    scale: 1;
   }
   to {
-    transform: translateY(20px);
+    transform: translate(-50%, -55%);
     opacity: 0;
+    scale: 0.95;
   }
 }
 
@@ -139,19 +143,8 @@ body {
   background-size: 200% auto;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .animate-fadeIn {
-  animation: fadeIn 0.2s ease-out forwards;
+  animation: fadeIn 0.3s ease-out forwards;
 }
 
 /* Add these new animations */
@@ -183,4 +176,34 @@ body {
 
 .view-transition-exit {
   animation: viewFadeOut 0.3s ease-out forwards;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    scale: 0.8;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes fadeOutScale {
+  from {
+    opacity: 1;
+    scale: 1;
+  }
+  to {
+    opacity: 0;
+    scale: 0.8;
+  }
+}
+
+.fade-in-scale {
+  animation: fadeInScale 0.5s ease-out forwards;
+}
+
+.fade-out-scale {
+  animation: fadeOutScale 0.5s ease-in forwards;
 }

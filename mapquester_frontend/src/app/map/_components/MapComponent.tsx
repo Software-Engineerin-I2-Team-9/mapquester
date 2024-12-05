@@ -11,6 +11,7 @@ import GuidePopup from './GuidePopup';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import Navbar from './NavBar';
 import { useRouter } from 'next/navigation';
+import Footer from '@/app/_components/Footer';
 
 const MapComponent: React.FC = () => {
   const router = useRouter();
@@ -58,6 +59,8 @@ const MapComponent: React.FC = () => {
       right: 0
     }
   });
+  const [showAddPointButton, setShowAddPointButton] = useState(false);
+  const addPointButtonTimeoutRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
     console.log("Fetching...")
@@ -138,12 +141,58 @@ const MapComponent: React.FC = () => {
 
   const handleMapClick = useCallback((event: MapMouseEvent) => {
     const { lngLat } = event;
+    
+    // Clear any existing timeout
+    if (addPointButtonTimeoutRef.current) {
+      clearTimeout(addPointButtonTimeoutRef.current);
+    }
+    
+    setTempMarker({
+      latitude: lngLat.lat,
+      longitude: lngLat.lng,
+    });
     setPendingLocation({
       latitude: lngLat.lat,
       longitude: lngLat.lng,
     });
-    setShowConfirmation(true);
+    setShowAddPointButton(true);
+    
+    // Set timeout to hide the button after 3 seconds
+    addPointButtonTimeoutRef.current = setTimeout(() => {
+      setShowAddPointButton(false);
+      setTempMarker(null);
+      setPendingLocation(null);
+    }, 3000);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (addPointButtonTimeoutRef.current) {
+        clearTimeout(addPointButtonTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleMarkerClick = (point: Point) => {
+    setSelectedPoint(point);
+    setNewPoint(null);
+    setShowAddPointButton(false);
+    setTempMarker(null);
+    setPendingLocation(null);
+    if (addPointButtonTimeoutRef.current) {
+      clearTimeout(addPointButtonTimeoutRef.current);
+    }
+  };
+
+  const handleAddPoint = () => {
+    if (pendingLocation) {
+      setNewPoint(pendingLocation);
+      setShowAddPointButton(false);
+      if (addPointButtonTimeoutRef.current) {
+        clearTimeout(addPointButtonTimeoutRef.current);
+      }
+    }
+  };
 
   const handleConfirmNewPoint = () => {
     if (pendingLocation) {
@@ -345,8 +394,7 @@ const MapComponent: React.FC = () => {
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      setSelectedPoint(point);
-                      setNewPoint(null);
+                      handleMarkerClick(point);
                     }}
                   >
                     <div className="flex flex-col items-center">
@@ -379,7 +427,7 @@ const MapComponent: React.FC = () => {
               style={{
                 fontFamily: 'Arial, sans-serif',
                 fontSize: '15px',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
               }}
             >
               i
@@ -450,25 +498,24 @@ const MapComponent: React.FC = () => {
         )}
       </div>
 
-      {/* Footer Navigation */}
-      <div className="h-[60px] bg-white border-t border-gray-200 flex justify-around items-center px-4 w-full">
-        <button className="flex flex-col items-center text-[#C91C1C]">
-          <span className="text-sm">Explore</span>
-        </button>
-        <button className="flex flex-col items-center text-gray-400">
-          <span className="text-sm">Saved POI</span>
-        </button>
-        <button
-          className="flex flex-col items-center text-gray-400"
-          onClick={() => {
-            
-            router.push('/settings');
-          }}
-        >
-          <span className="text-sm">Profile</span>
-        </button>
+      {showAddPointButton && isMapView && (
+  <div 
+    className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-50 animate-fadeIn"
+    style={{
+      animation: 'fadeIn 0.3s ease-out forwards',
+    }}
+  >
+    <button
+      onClick={handleAddPoint}
+      className="bg-[#D69C89] hover:bg-[#CD5C5C] text-white font-bold py-2 px-6 rounded-full shadow-lg flex items-center space-x-2"
+    >
+      <span>Add Point Here</span>
+    </button>
+  </div>
+)}
 
-      </div>
+      {/* Footer Navigation */}
+      <Footer currentPage="explore" />
 
       {/* Modals and popups */}
       <GuidePopup isOpen={showGuide} onClose={() => setShowGuide(false)} />
