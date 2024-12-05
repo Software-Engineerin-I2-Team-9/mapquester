@@ -128,9 +128,9 @@ body {
 .tagline-text {
   background: linear-gradient(
     to right,
-    #C91C1C,
+    #CD5C5C,
     #ff6b6b,
-    #C91C1C
+    #CD5C5C
   );
   -webkit-background-clip: text;
   background-clip: text;

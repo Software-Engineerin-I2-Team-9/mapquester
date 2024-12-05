@@ -3,7 +3,7 @@ import React from 'react';
 const ToggleSwitch: React.FC<{ isOn: boolean; onToggle: () => void }> = ({ isOn, onToggle }) => {
     return (
       <div
-        className={`w-24 h-10 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 bg-[#C91C1C] relative`}
+        className={`w-24 h-10 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 bg-[#D69C89] relative`}
         onClick={onToggle}
       >
         {/* White circle with smooth transition */}

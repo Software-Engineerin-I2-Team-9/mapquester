@@ -82,7 +82,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
         </div>
         <button
           type="submit"
-          className="w-full py-3 px-4 bg-[#C91C1C] hover:opacity-90 text-white font-semibold rounded-lg transition-opacity"
+          className="w-full py-3 px-4 bg-[#D69C89] hover:opacity-90 text-white font-semibold rounded-lg transition-opacity"
           disabled={isLoading}
         >
           {isLoading ? 'Logging in...' : 'Login'}

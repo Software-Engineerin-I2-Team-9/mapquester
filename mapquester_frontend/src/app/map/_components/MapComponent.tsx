@@ -331,7 +331,7 @@ const MapComponent: React.FC = () => {
               onMove={e => setCurrViewState(e.viewState)}
               onClick={handleMapClick}
               style={{width: '100%', height: '100%'}}
-              mapStyle="mapbox://styles/sentient-ramen/cm2lfmqpq00au01p707n1dyky"
+              mapStyle="mapbox://styles/mapbox/light-v10"
             >
               {points.map((point, index) => (   
                 <Marker
@@ -375,7 +375,7 @@ const MapComponent: React.FC = () => {
             {/* Info Button - only shown in map view */}
             <button
               onClick={() => setShowGuide(true)}
-              className="absolute bottom-[6px] right-[10px] z-[99] bg-[#C91C1C] text-white w-[32px] h-[32px] rounded-full flex items-center justify-center hover:opacity-90 transition-opacity"
+              className="absolute bottom-[6px] right-[10px] z-[99] bg-[#D69C89] text-white w-[32px] h-[32px] rounded-full flex items-center justify-center hover:opacity-90 transition-opacity"
               style={{
                 fontFamily: 'Arial, sans-serif',
                 fontSize: '15px',
@@ -429,7 +429,7 @@ const MapComponent: React.FC = () => {
                           <div className="mt-4">
                             <button
                               onClick={() => setSelectedPoint(point)}
-                              className="w-full hover-button bg-[#C91C1C] text-white text-sm font-medium px-4 py-2 rounded"
+                              className="w-full hover-button bg-[#D69C89] text-white text-sm font-medium px-4 py-2 rounded"
                             >
                               View Details
                             </button>
@@ -465,7 +465,7 @@ const MapComponent: React.FC = () => {
             router.push('/settings');
           }}
         >
-          <span className="text-sm">Settings</span>
+          <span className="text-sm">Profile</span>
         </button>
 
       </div>
@@ -617,7 +617,7 @@ const MapComponent: React.FC = () => {
                     <div className="flex space-x-2">
                       <button 
                         onClick={() => setIsUpdating(true)}
-                        className="bg-[#C91C1C] hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                        className="bg-[#D69C89] hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
                       >
                         Update
                       </button>
