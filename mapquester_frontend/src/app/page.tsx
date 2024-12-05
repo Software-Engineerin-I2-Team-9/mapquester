@@ -8,6 +8,7 @@ import { useEffect } from 'react'
 
 interface AuthState {
   isLoggedIn: boolean;
+  id: string;
   accessToken: string;
   refreshToken: string;
 }
@@ -17,15 +18,30 @@ const Home = () => {
   const [auth, setAuth] = useRecoilState<AuthState>(authState)
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken')
-    if (token) {
-      setAuth((prevAuth: AuthState) => ({
-        ...prevAuth,
+    const token = localStorage.getItem('accessToken');
+    const refreshToken = localStorage.getItem('refreshToken');
+    const id = localStorage.getItem('id');
+  
+    if (token && refreshToken && id) {
+      setAuth({
         isLoggedIn: true,
-        accessToken: token
-      }))
+        id,
+        accessToken: token,
+        refreshToken: refreshToken
+      });
+    } else {
+      // If any of the required auth items are missing, clear everything
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('id');
+      setAuth({
+        isLoggedIn: false,
+        id: '',
+        accessToken: '',
+        refreshToken: ''
+      });
     }
-  }, [setAuth])
+  }, [setAuth]);
 
   return (
     <main className="h-screen flex flex-col bg-white">
@@ -45,7 +61,7 @@ const Home = () => {
               </p>
               <button
                 onClick={() => router.push('/login')}
-                className="py-4 px-10 bg-[#C91C1C] hover:opacity-90 transition-opacity text-white text-xl font-semibold rounded-lg shadow-md"
+                className="py-4 px-10 bg-[#D69C89] hover:opacity-90 transition-opacity text-white text-xl font-semibold rounded-lg shadow-md"
               >
                 Get Started
               </button>

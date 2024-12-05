@@ -14,12 +14,12 @@ const UpdatePOIForm: React.FC<UpdatePOIFormProps> = ({ point, onSubmit, onChange
       <form onSubmit={onSubmit} className="space-y-4">
         <h3 className="text-xl font-semibold text-gray-800 mb-3">Update Point</h3>
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-800">Name</label>
+          <label htmlFor="title" className="block text-sm font-medium text-gray-800">Title</label>
           <input
             type="text"
-            id="name"
-            value={point.name}
-            onChange={(e) => onChange('name', e.target.value)}
+            id="title"
+            value={point.title}
+            onChange={(e) => onChange('title', e.target.value)}
             className="mt-1 block w-full rounded-md bg-mutedsand border-gray-600 text-gray-600"
             required
           />
