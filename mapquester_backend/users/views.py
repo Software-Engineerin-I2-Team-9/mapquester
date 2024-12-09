@@ -93,3 +93,12 @@ def delete_account(request):
         {"message": "Your account has been deleted successfully."},
         status=status.HTTP_200_OK,
     )
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_users(request):
+    users = User.objects.all().values('id', 'username')
+    return Response({
+        "users": list(users),
+        "count": users.count()
+    }, status=status.HTTP_200_OK)
