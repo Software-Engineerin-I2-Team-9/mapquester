@@ -2,7 +2,7 @@ from django.db import models
 
 
 # Create your models here.
-class MapView:
+class Health:
     def show_pois_on_maps(self):
         # Logic to display POIs on maps
         pass

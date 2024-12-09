@@ -31,6 +31,7 @@ const UpdatePOIForm: React.FC<UpdatePOIFormProps> = ({ point, onSubmit, onChange
             value={point.tag}
             onChange={(e) => onChange('tag', e.target.value)}
             className="mt-1 block w-full rounded-md bg-mutedsand border-gray-600 text-gray-600"
+            required
           >
             <option value="food">Food</option>
             <option value="event">Event</option>
@@ -49,18 +50,19 @@ const UpdatePOIForm: React.FC<UpdatePOIFormProps> = ({ point, onSubmit, onChange
             required
           ></textarea>
         </div>
-        <div className="flex justify-between">
-          <button type="submit" className="bg-blue-600 text-white rounded-md py-2 px-4 hover:bg-blue-700">
-            Update
-          </button>
-          <button 
-            type="button" 
-            onClick={onCancel}
-            className="bg-gray-600 text-white rounded-md py-2 px-4 hover:bg-gray-700"
-          >
-            Back
-          </button>
-        </div>
+        <button 
+          type="submit" 
+          className="w-full bg-blue-600 text-white rounded-md py-2 hover:bg-blue-700"
+        >
+          Update Point
+        </button>
+        <button 
+          type="button"
+          onClick={onCancel} 
+          className="w-full bg-red-600 text-white rounded-md py-2 hover:bg-red-700"
+        >
+          Cancel
+        </button>
       </form>
     </div>
   );

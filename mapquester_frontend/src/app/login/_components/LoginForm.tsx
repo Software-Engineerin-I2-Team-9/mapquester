@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import apiClient from '@/app/api/axios';
+import Link from 'next/link';
 
 interface LoginFormProps {
-  onLogin: (accessToken: string, refreshToken: string) => void;
+  onLogin: (id: string, accessToken: string, refreshToken: string) => void;
   onSignup: () => void;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onSignup }) => {
+const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
   const [form, setForm] = useState({ username: '', password: '' });
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +40,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onSignup }) => {
       });
 
       setMessage(response.data.message);
-      onLogin(response.data.access, response.data.refresh);
+      onLogin(response.data.id, response.data.access, response.data.refresh);
     } catch (error) {
       const axiosError = error as { response?: { data?: { error?: string, detail?: string } } };
       const errorMessage = axiosError.response?.data?.error || axiosError.response?.data?.detail || 'An error occurred during log in';
@@ -50,9 +51,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onSignup }) => {
   };
 
   return (
-    <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
-      <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">Welcome to MapQuester</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="w-full h-full max-w-[450px] p-8 bg-white flex flex-col justify-center">
+      <h1 className="text-3xl font-bold text-center text-gray-800 mb-12">Welcome to MapQuester</h1>
+      <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-sm mx-auto">
         <div>
           <label htmlFor="username" className="sr-only">Username</label>
           <input
@@ -63,7 +64,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onSignup }) => {
             onChange={handleInputChange}
             placeholder="Username"
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-700 focus:outline-none focus:border-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-[#C91C1C]"
           />
         </div>
         <div>
@@ -76,23 +77,22 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onSignup }) => {
             onChange={handleInputChange}
             placeholder="Password"
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-700 focus:outline-none focus:border-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-[#C91C1C]"
           />
         </div>
         <button
           type="submit"
-          className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-md transition duration-300"
+          className="w-full py-3 px-4 bg-[#C91C1C] hover:opacity-90 text-white font-semibold rounded-lg transition-opacity"
           disabled={isLoading}
         >
           {isLoading ? 'Logging in...' : 'Login'}
         </button>
-        <button
-          type="button"
-          onClick={onSignup}
-          className="w-full py-2 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-md transition duration-300"
+        <Link
+          href="/signup"
+          className="w-full block text-center py-3 px-4 bg-[#F8F8F8] text-gray-800 font-semibold rounded-lg hover:bg-gray-100 transition-colors"
         >
           Sign Up
-        </button>
+        </Link>
         {message && <p className="mt-4 text-center text-red-500">{message}</p>}
       </form>
     </div>
