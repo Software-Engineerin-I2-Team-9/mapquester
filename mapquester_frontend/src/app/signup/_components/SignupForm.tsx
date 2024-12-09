@@ -1,6 +1,7 @@
-'use client'
+'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import apiClient from '@/app/api/axios';
 
 interface SignupFormProps {
@@ -8,6 +9,7 @@ interface SignupFormProps {
 }
 
 const SignupForm: React.FC<SignupFormProps> = ({ onSignup }) => {
+  const router = useRouter();
   const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '' });
   const [, setMessage] = useState('');
   const [, setIsLoading] = useState(false);
@@ -26,27 +28,33 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup }) => {
     setIsLoading(true);
 
     try {
-      const endpoint = '/api/v1/users/signup/'
-      const response = await apiClient.post(endpoint, {
-        username: form.username,
-        email: form.email,
-        password1: form.password,
-        password2: form.confirmPassword,
-      },{
-        headers: {
-          'Content-Type': 'application/json',
+      const endpoint = '/api/v1/users/signup/';
+      const response = await apiClient.post(
+        endpoint,
+        {
+          username: form.username,
+          email: form.email,
+          password1: form.password,
+          password2: form.confirmPassword,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
         }
-      });
+      );
       setMessage(response.data.message);
       onSignup();
     } catch (error) {
-      const axiosError = error as { response?: { data?: { form_errors?: Record<string, string[]>, message?: string } } };
+      const axiosError = error as {
+        response?: { data?: { form_errors?: Record<string, string[]>; message?: string } };
+      };
       const errorMessage = axiosError.response?.data?.form_errors
-        ? Object.entries(axiosError.response.data.form_errors).map(([field, messages]) => {
-            return `${field}: ${messages.join(', ')}`;
-          }).join('\n')
+        ? Object.entries(axiosError.response.data.form_errors)
+            .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+            .join('\n')
         : axiosError.response?.data?.message || 'An error occurred during sign up';
-      
+
       alert(errorMessage);
     } finally {
       setIsLoading(false);
@@ -58,7 +66,9 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup }) => {
       <h1 className="text-3xl font-bold text-center text-gray-800 mb-12">Sign Up for MapQuester</h1>
       <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-sm mx-auto">
         <div>
-          <label htmlFor="username" className="sr-only">Username</label>
+          <label htmlFor="username" className="sr-only">
+            Username
+          </label>
           <input
             id="username"
             name="username"
@@ -71,7 +81,9 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup }) => {
           />
         </div>
         <div>
-          <label htmlFor="email" className="sr-only">Email</label>
+          <label htmlFor="email" className="sr-only">
+            Email
+          </label>
           <input
             id="email"
             name="email"
@@ -84,7 +96,9 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup }) => {
           />
         </div>
         <div>
-          <label htmlFor="password" className="sr-only">Password</label>
+          <label htmlFor="password" className="sr-only">
+            Password
+          </label>
           <input
             id="password"
             name="password"
@@ -97,7 +111,9 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup }) => {
           />
         </div>
         <div>
-          <label htmlFor="confirmPassword" className="sr-only">Confirm Password</label>
+          <label htmlFor="confirmPassword" className="sr-only">
+            Confirm Password
+          </label>
           <input
             id="confirmPassword"
             name="confirmPassword"
@@ -109,15 +125,21 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup }) => {
             className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-[#C91C1C]"
           />
         </div>
-        <button 
-          type="submit" 
-          className="w-full py-3 px-4 bg-[#C91C1C] hover:opacity-90 text-white font-semibold rounded-lg transition-opacity"
+        <button
+          type="submit"
+          className="w-full py-3 px-4 bg-[#D69C89] hover:opacity-90 text-white font-semibold rounded-lg transition-opacity"
         >
           Sign Up
         </button>
       </form>
+      <button
+        onClick={() => router.push('/login')}
+        className="w-full mt-4 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors"
+      >
+        Back to Login
+      </button>
     </div>
-  )
+  );
 };
 
-export default SignupForm
+export default SignupForm;
