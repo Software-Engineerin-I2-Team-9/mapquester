@@ -93,3 +93,29 @@ def delete_account(request):
         {"message": "Your account has been deleted successfully."},
         status=status.HTTP_200_OK,
     )
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_user(request, user_id=None):
+    if user_id:
+        try:
+            user = User.objects.get(id=user_id)
+            user_data = {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'profile_info': user.profile_info
+            }
+            return Response({
+                "user": user_data
+            }, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({
+                "error": "User not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+    else:
+        users = User.objects.all().values('id', 'username')
+        return Response({
+            "users": list(users),
+            "count": users.count()
+        }, status=status.HTTP_200_OK)
