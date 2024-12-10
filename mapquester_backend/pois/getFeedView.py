@@ -8,7 +8,13 @@ from django.http import JsonResponse
 # Get Feed (POIs by followed users)
 def get_feed(request, user_id):
     if request.method == "GET":
-        user = get_object_or_404(User, id=user_id)
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return JsonResponse(
+                {"error": f"User with ID {user_id} does not exist."}, status=404
+            )
 
         # Fetch POIs created by followed users
         followed_users = user.following.values_list("following", flat=True)
