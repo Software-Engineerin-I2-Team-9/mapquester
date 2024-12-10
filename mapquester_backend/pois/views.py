@@ -143,9 +143,8 @@ def get_pois(request, user_id):
 
     # Initialize query for the user's POIs, excluding deleted POIs
     pois_query = POI.objects.filter(userId=user_id, isDeleted=False)
-
     # Apply tag filtering if tags are provided
-    if tags and len(tags) != 0:
+    if tags:
         pois_query = pois_query.filter(tag__in=tags)
 
     # Handle list view with pagination
@@ -224,21 +223,31 @@ def update_poi(request, poi_id):
     except POI.DoesNotExist:
         return Response({"error": "POI not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    # Toggle isPublic if requested
     if "isPublic" in request.data:
         poi.isPublic = request.data["isPublic"]
 
-    # Update reactions count if requested
     if "reactions_change" in request.data:
         reactions_change = request.data["reactions_change"]
         poi.reactions += reactions_change
         if poi.reactions < 0:
             poi.reactions = 0
 
+    if "title" in request.data:
+        poi.title = request.data["title"]
+
+    if "description" in request.data:
+        poi.description = request.data["description"]
+
+    if "tag" in request.data:
+        poi.tag = request.data["tag"]
+
     poi.save()
     return Response(
         {
             "message": "POI updated successfully",
+            "title": poi.title,
+            "description": poi.description,
+            "tag": poi.tag,
             "isPublic": poi.isPublic,
             "reactions": poi.reactions,
         },
