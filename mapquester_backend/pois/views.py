@@ -241,7 +241,7 @@ def update_poi(request, poi_id):
 
     if "tag" in request.data:
         poi.tag = request.data["tag"]
-    
+
     poi.updatedAt = now()
     poi.save()
     return Response(

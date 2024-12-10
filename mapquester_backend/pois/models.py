@@ -31,13 +31,17 @@ class POI(models.Model):
 
 class PoiInteractions(models.Model):
     INTERACTION_TYPES = [
-        ('reaction', 'Reaction'),
-        ('comment', 'Comment'),
+        ("reaction", "Reaction"),
+        ("comment", "Comment"),
     ]
 
     id = models.AutoField(primary_key=True)
-    userId = models.ForeignKey(User, on_delete=models.CASCADE, related_name="poi_interactions")
-    poiId = models.ForeignKey(POI, on_delete=models.CASCADE, related_name="interactions")
+    userId = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="poi_interactions"
+    )
+    poiId = models.ForeignKey(
+        POI, on_delete=models.CASCADE, related_name="interactions"
+    )
     interactionType = models.CharField(max_length=20, choices=INTERACTION_TYPES)
     content = models.TextField(blank=True, null=True)  # Only required for comments
     createdAt = models.DateTimeField(auto_now_add=True)
