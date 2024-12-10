@@ -91,6 +91,7 @@ def list_interactions(request, poi_id):
             {
                 "id": interaction.id,
                 "userId": interaction.userId.id,
+                "username": interaction.userId.username,  # Added username field
                 "interactionType": interaction.interactionType,
                 "content": interaction.content,
                 "createdAt": interaction.createdAt,
