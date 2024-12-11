@@ -25,14 +25,18 @@ const logout = async () => {
   }
 };
 
-function LogoutButton() {
+interface LogoutButtonProps {
+  className?: string;
+}
+
+const LogoutButton: React.FC<LogoutButtonProps> = ({ className }) => {
   const handleLogout = async () => {
     await logout();
   };
 
   return (
     <button 
-      className="py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded transition duration-300 shadow-md" 
+      className={className} 
       onClick={handleLogout}
     >
       Logout

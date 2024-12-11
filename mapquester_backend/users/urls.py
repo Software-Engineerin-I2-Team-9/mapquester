@@ -11,4 +11,5 @@ urlpatterns = [
     path("delete-account/", views.delete_account, name="delete_account"),
     path("user/", views.get_user, name="get_user"),
     path("user/<str:username>/", views.get_user, name="get_user_detail"),
+    path("exact-user/<str:id>/", views.get_exact_user, name="get_exact_user_detail"),
 ]
