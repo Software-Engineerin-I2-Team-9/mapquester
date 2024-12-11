@@ -74,30 +74,31 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",  # Next.js app running locally
     "https://api.mapquester.website",
     "https://app.mapquester.website",
+    "https://app.mapquester.website/"
 ]
 
 CORS_ALLOW_CREDENTIALS = True
 
 # Detailed CORS settings
 CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
 ]
 
 CORS_ALLOW_HEADERS = [
-    'Accept',
-    'Accept-Encoding',
-    'Authorization',
-    'Content-type',
-    'DNT',
-    'Origin',
-    'User-Agent',
-    'X-CSRFToken',
-    'X-Requested-With',
+    "Accept",
+    "Accept-Encoding",
+    "Authorization",
+    "Content-type",
+    "DNT",
+    "Origin",
+    "User-Agent",
+    "X-CSRFToken",
+    "X-Requested-With",
 ]
 
 ROOT_URLCONF = "mapquester.urls"
