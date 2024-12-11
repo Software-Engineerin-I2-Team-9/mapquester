@@ -43,9 +43,8 @@ async (error: AxiosError): Promise<any> => {
 
     if (refreshToken) {
         try {
-        // Call your API to refresh the token
         const response = await axios.post(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/token/refresh/`,
+            `${process.env.NEXT_PUBLIC_BACKEND_DEV_URL}/api/token/refresh/`,
             {
             refresh: refreshToken,
             }
@@ -54,21 +53,16 @@ async (error: AxiosError): Promise<any> => {
         if (response.status === 200) {
             const newAccessToken = response.data.access;
             localStorage.setItem('accessToken', newAccessToken);
-            apiClient.defaults.headers.common[
-            'Authorization'
-            ] = 'Bearer ' + newAccessToken;
+            apiClient.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
 
             if (originalRequest.headers) {
-            originalRequest.headers[
-                'Authorization'
-            ] = 'Bearer ' + newAccessToken;
+            originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
             }
 
-            // Retry the original request with the new token
             return apiClient(originalRequest);
         }
         } catch (refreshError) {
-        // Handle token refresh errors (e.g., log out the user)
+        // Clear all auth data on refresh token failure
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('id');
@@ -76,7 +70,7 @@ async (error: AxiosError): Promise<any> => {
         return Promise.reject(refreshError);
         }
     } else {
-        // No refresh token, redirect to login
+        // No refresh token available, redirect to login
         window.location.href = '/login';
     }
     }
