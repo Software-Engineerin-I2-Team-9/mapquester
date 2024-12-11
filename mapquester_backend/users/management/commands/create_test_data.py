@@ -102,9 +102,11 @@ class Command(BaseCommand):
                     userId=follower,
                     poiId=poi,
                     interactionType=interaction_type,
-                    content=random.choice(comment_texts)
-                    if interaction_type == "comment"
-                    else None,
+                    content=(
+                        random.choice(comment_texts)
+                        if interaction_type == "comment"
+                        else None
+                    ),
                 )
                 if interaction_type == "reaction":
                     poi.reactions += 1
