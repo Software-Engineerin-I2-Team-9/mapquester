@@ -117,6 +117,7 @@ def get_user(request, username=None):
             {"users": list(users), "count": users.count()}, status=status.HTTP_200_OK
         )
 
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_exact_user(request, id):
@@ -126,7 +127,7 @@ def get_exact_user(request, id):
             "id": user.id,
             "username": user.username,
             "email": user.email,
-            "profile_info": getattr(user, "profile_info", None)
+            "profile_info": getattr(user, "profile_info", None),
         }
         return Response(user_data, status=status.HTTP_200_OK)
     except User.DoesNotExist:

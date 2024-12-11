@@ -1,6 +1,6 @@
 import { FC, useState, useEffect, useRef } from 'react';
 import { Point } from '@/app/utils/types';
-import { capitalize } from '@/app/utils/fns';
+import { capitalize, getRelativeTime } from '@/app/utils/fns';
 import { useRecoilValue } from 'recoil';
 import { authState } from '@/app/atoms/authState';
 import apiClient from '@/app/api/axios';
@@ -8,6 +8,7 @@ import { tagToColorMapping } from '@/app/utils/data';
 import { ReactionUser } from '@/app/utils/types';
 
 interface PointDetailsProps {
+  feed?: boolean;
   point: Point;
   onClose: () => void;
   setShowReactionModal: (show: boolean) => void;
@@ -20,55 +21,13 @@ interface Interaction {
   interactionType: 'reaction' | 'comment';
   content: string;
   createdAt: string;
+  updatedAt: string;
   username: string;
 }
 
-const DEV_MODE = true; // Toggle between dev and prod mode
-
-const DUMMY_INTERACTIONS: Interaction[] = [
-  {
-    id: '1',
-    userId: '123',
-    interactionType: 'reaction',
-    content: '❤️',
-    createdAt: '2024-03-15T10:00:00Z',
-    username: 'alice_wonder'
-  },
-  {
-    id: '2',
-    userId: '456',
-    interactionType: 'reaction',
-    content: '❤️',
-    createdAt: '2024-03-15T09:00:00Z',
-    username: 'bob_builder'
-  },
-  {
-    id: '3',
-    userId: '789',
-    interactionType: 'comment',
-    content: 'This place is amazing! 🌟',
-    createdAt: '2024-03-15T08:30:00Z',
-    username: 'charlie_explorer'
-  },
-  {
-    id: '4',
-    userId: '101',
-    interactionType: 'comment',
-    content: 'Great spot for photos',
-    createdAt: '2024-03-14T15:20:00Z',
-    username: 'diana_photographer'
-  },
-  {
-    id: '5',
-    userId: '102',
-    interactionType: 'reaction',
-    content: '❤️',
-    createdAt: '2024-03-14T12:00:00Z',
-    username: 'evan_traveler'
-  }
-];
 
 const PointDetails: FC<PointDetailsProps> = ({
+  feed,
   point,
   onClose,
   setShowReactionModal,
@@ -80,24 +39,23 @@ const PointDetails: FC<PointDetailsProps> = ({
   const [hasReacted, setHasReacted] = useState(false);
   const longPressTimer = useRef<NodeJS.Timeout>();
 
+  console.log("auth: ", auth);
+
   useEffect(() => {
     fetchInteractions();
   }, [point.id]);
 
   const fetchInteractions = async () => {
-    if (DEV_MODE) {
-      setInteractions(DUMMY_INTERACTIONS);
-      setHasReacted(DUMMY_INTERACTIONS.some(i => 
-        i.userId === auth.id && i.interactionType === 'reaction' && i.content === '❤️'
-      ));
-      return;
-    }
-
     try {
       const response = await apiClient.get(`/api/v1/pois/interactions/${point.id}/`);
       setInteractions(response.data);
+      const t_authId = auth.id;
+      const t_userId = response.data.map((i: Interaction) => i.userId);
+      console.log("t_authId: ", t_authId);
+      console.log("t_userId: ", t_userId); 
+      console.log(t_authId === t_userId[0]);
       setHasReacted(response.data.some((i: Interaction) => 
-        i.userId === auth.id && i.interactionType === 'reaction' && i.content === '❤️'
+        String(i.userId) === String(auth.id) && i.interactionType === 'reaction'
       ));
     } catch (error) {
       console.error('Error fetching interactions:', error);
@@ -105,35 +63,13 @@ const PointDetails: FC<PointDetailsProps> = ({
   };
 
   const handleReaction = async () => {
-    if (DEV_MODE) {
-      if (hasReacted) {
-        // Remove the reaction
-        setInteractions(interactions.filter(i => 
-          !(i.userId === auth.id && i.interactionType === 'reaction' && i.content === '❤️')
-        ));
-        setHasReacted(false);
-      } else {
-        // Add new reaction
-        const newInteraction: Interaction = {
-          id: String(Date.now()),
-          userId: auth.id,
-          interactionType: 'reaction',
-          content: '❤️',
-          createdAt: new Date().toISOString(),
-          username: 'current_user'
-        };
-        setInteractions([newInteraction, ...interactions]);
-        setHasReacted(true);
-      }
-      return;
-    }
-
+    console.log("authId: ", auth.id);
+    console.log("poiId: ", point.id);
     try {
       await apiClient.post('/api/v1/pois/interactions/create/', {
         userId: auth.id,
         poiId: point.id,
         interactionType: 'reaction',
-        content: '❤️'
       });
       fetchInteractions();
     } catch (error) {
@@ -144,7 +80,7 @@ const PointDetails: FC<PointDetailsProps> = ({
   const handleReactionPress = () => {
     longPressTimer.current = setTimeout(() => {
       const reactionData = interactions
-        .filter(i => i.interactionType === 'reaction' && i.content === '❤️')
+        .filter(i => i.interactionType === 'reaction')
         .map(i => ({
             id: i.userId,
             username: i.username,
@@ -167,20 +103,6 @@ const PointDetails: FC<PointDetailsProps> = ({
     e.preventDefault();
     if (!comment.trim()) return;
 
-    if (DEV_MODE) {
-      const newComment: Interaction = {
-        id: String(Date.now()),
-        userId: auth.id,
-        interactionType: 'comment',
-        content: comment,
-        createdAt: new Date().toISOString(),
-        username: 'current_user'
-      };
-      setInteractions([newComment, ...interactions]);
-      setComment('');
-      return;
-    }
-
     try {
       await apiClient.post('/api/v1/pois/interactions/create/', {
         userId: auth.id,
@@ -196,7 +118,7 @@ const PointDetails: FC<PointDetailsProps> = ({
   };
 
   const reactionCount = () => 
-    interactions.filter(i => i.interactionType === 'reaction' && i.content === '❤️').length;
+    interactions.filter(i => i.interactionType === 'reaction').length;
 
   return (
     <div className="flex flex-col h-[450px]">
@@ -218,7 +140,24 @@ const PointDetails: FC<PointDetailsProps> = ({
               {capitalize(point.tag)}
             </span>
           </div>
+          {feed && <p className="italic text-sm text-gray-600">
+            Author:&nbsp;
+            <a 
+              href={`/profile/${point.user_id}`} 
+              className="text-blue-500 hover:underline"
+            >
+              {point.user}
+            </a>
+          </p>}
           <p className="text-gray-800">{point.description}</p>
+          {feed && (
+            <>
+              <hr className="my-2" />
+              <p className="italic text-sm text-gray-600">
+                {getRelativeTime(point.created_at!)}
+              </p>
+            </>
+          )}
         </div>
       </div>
 
@@ -230,12 +169,12 @@ const PointDetails: FC<PointDetailsProps> = ({
             .map(comment => (
               <div key={comment.id} className="bg-gray-50 p-2 rounded">
                 <div className="flex items-center space-x-2 mb-1">
-                  <span className="font-medium text-sm">{comment.username}</span>
-                  <span className="text-sm text-gray-800">{comment.content}</span>
-                </div>
-                <p className="text-xs text-gray-500">
-                  {new Date(comment.createdAt).toLocaleDateString()}
-                </p>
+            <span className="font-medium">{comment.username}</span>
+            <span className="italic text-sm text-gray-600">
+              {getRelativeTime(comment.createdAt)}
+            </span>
+          </div>
+          <p className="text-sm text-gray-800">{comment.content}</p>
               </div>
             ))
           }

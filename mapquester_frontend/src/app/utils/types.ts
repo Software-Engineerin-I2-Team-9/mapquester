@@ -1,7 +1,6 @@
 export interface Point {
     id: string;
-    userId: string;
-    username: string;
+    user_id?: string;
     title: string;
     description: string;
     latitude: number;
@@ -26,24 +25,25 @@ export interface ReactionUser {
 export interface UserProfile {
     id: string;
     username: string;
+    email?: string;
     profile_info?: string;
-  }
+}
   
 export interface Follower {
       follower__id: string;
       follower__username: string;
       follower__email: string;
-    }
+}
   
 export interface Following {
       following__id: string;
       following__username: string;
       following__email: string;
-    }
+}
     
 export interface FollowMetadata {
       followers: Follower[];
       followings: Following[];
       followerCount: number;
       followingCount: number;
-  }
+}

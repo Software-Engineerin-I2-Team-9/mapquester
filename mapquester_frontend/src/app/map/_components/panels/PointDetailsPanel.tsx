@@ -80,10 +80,11 @@ const PointDetailsPanel: FC<PointDetailsPanelProps> = ({
             ) : (
               <>
                 <PointDetails
-                  point={selectedPoint}
-                  onClose={() => setSelectedPoint(null)}
-                  setShowReactionModal={setShowReactionModal}
-                  setReactionUsers={setReactionUsers}
+                    feed={feed}
+                    point={selectedPoint}
+                    onClose={() => setSelectedPoint(null)}
+                    setShowReactionModal={setShowReactionModal}
+                    setReactionUsers={setReactionUsers}
                 />
                 {!feed && (
                   <div className="mt-4 flex space-x-2">

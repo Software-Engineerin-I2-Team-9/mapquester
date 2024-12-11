@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect, FC } from 'react';
 import Map, { Marker, ViewState, MapRef, MapMouseEvent } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Point, ReactionUser } from '@/app/utils/types';
-import { capitalize } from '@/app/utils/fns';
+import { capitalize, getRelativeTime } from '@/app/utils/fns';
 import { tagToColorMapping } from '@/app/utils/data';
 import apiClient from '@/app/api/axios';
 import { useRecoilState } from 'recoil';
@@ -161,7 +161,7 @@ const MapComponent: FC<{feed?: boolean}> = ({feed}) => {
       */
   
       try {
-        const endpoint = `/api/v1/pois/get/${auth.id}`;
+        const endpoint = feed ? `/api/v1/pois/feed/${auth.id}` : `/api/v1/pois/get/${auth.id}`;
         const response = await apiClient.get(endpoint, {
           params: {
             viewType: isMapView ? 'map' : 'list',
@@ -180,7 +180,8 @@ const MapComponent: FC<{feed?: boolean}> = ({feed}) => {
             return queryString.toString();
           },
         });
-  
+        
+        console.log("Response: ", response.data.pois)
         if (isMapView) {
           // For map view, replace points directly
           setPoints(response.data.pois || []); // Ensure points are cleared if response is empty
@@ -304,18 +305,6 @@ const MapComponent: FC<{feed?: boolean}> = ({feed}) => {
         clearTimeout(addPointButtonTimeoutRef.current);
       }
     }
-  };
-
-  const handleConfirmNewPoint = () => {
-    if (pendingLocation) {
-      setNewPoint(pendingLocation);
-      setTempMarker(pendingLocation);
-      setSelectedPoint(null);
-    }
-  };
-
-  const handleCancelNewPoint = () => {
-    setPendingLocation(null);
   };
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -570,7 +559,7 @@ useEffect(() => {
                   >
                     <div className="flex flex-col items-center">
                       <div className="text-xs font-bold text-eggshell bg-black bg-opacity-50 px-1 rounded mb-1">
-                        {point.title}
+                        {feed ? `${point.user}'s ${point.title}` : point.title}
                       </div>
                       <svg 
                         width="24" 
@@ -612,7 +601,35 @@ useEffect(() => {
                   latitude={tempMarker.latitude}
                   anchor="bottom"
                 >
-                  <div className="w-3 h-3 rounded-full bg-gray-900 opacity-50" />
+                  <svg 
+                    width="24" 
+                    height="38" 
+                    viewBox="0 0 42 66" 
+                    fill="none" 
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path 
+                      opacity="0.3" 
+                      d="M25.5 63.5C25.5 63.8989 25.1636 64.3947 24.3119 64.8206C23.4902 65.2314 22.3199 65.5 21 65.5C19.6801 65.5 18.5098 65.2314 17.6881 64.8206C16.8364 64.3947 16.5 63.8989 16.5 63.5C16.5 63.1011 16.8364 62.6053 17.6881 62.1794C18.5098 61.7686 19.6801 61.5 21 61.5C22.3199 61.5 23.4902 61.7686 24.3119 62.1794C25.1636 62.6053 25.5 63.1011 25.5 63.5Z" 
+                      fill="#D3D3D3"
+                      stroke="#D3D3D3"
+                    />
+                    <path 
+                      d="M22.953 41.4082L22.5 41.451V41.906V62C22.5 62.8284 21.8284 63.5 21 63.5C20.1716 63.5 19.5 62.8284 19.5 62V41.906V41.451L19.047 41.4082C8.6415 40.4251 0.5 31.663 0.5 21C0.5 9.67816 9.67816 0.5 21 0.5C32.3218 0.5 41.5 9.67816 41.5 21C41.5 31.663 33.3585 40.4251 22.953 41.4082Z" 
+                      fill="white" 
+                      stroke="#D3D3D3"
+                    />
+                    <path 
+                      d="M21 4.5C30.1127 4.5 37.5 11.8873 37.5 21C37.5 30.1127 30.1127 37.5 21 37.5C11.8873 37.5 4.5 30.1127 4.5 21C4.5 11.8873 11.8873 4.5 21 4.5Z" 
+                      fill="#D3D3D3"
+                      stroke="#D3D3D3"
+                    />
+                    <path 
+                      d="M21 14.5C24.5899 14.5 27.5 17.4101 27.5 21C27.5 24.5899 24.5899 27.5 21 27.5C17.4101 27.5 14.5 24.5899 14.5 21C14.5 17.4101 17.4101 14.5 21 14.5Z" 
+                      fill="white" 
+                      stroke="#D3D3D3"
+                    />
+                  </svg>
                 </Marker>
               )}
               {userLocation && (
@@ -645,63 +662,79 @@ useEffect(() => {
           <div className={`absolute inset-0 flex flex-col ${isViewTransitioning ? 'view-transition-exit' : 'view-transition-enter'}`}>
   {/* List View Content */}
   <div ref={listViewRef} className="flex-1 overflow-y-auto bg-gray-50" onScroll={handleScroll}>
-                <div className="space-y-2 p-4">
-                  {!points.length ? (
-                    <div className="animate-pulse space-y-2">
-                      {Array(3).fill(null).map((_, index) => (
-                        <div key={index} className="bg-gray-200 h-10 rounded"></div>
-                      ))}
-                    </div>
-                  ) : (
-                    points.map((point, index) => {
-                      return (
-                      
-                        <div
-                        key={index}
-                        className="card bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"
-                      >
-                        <div className="p-3">
-                          <div className="flex justify-between items-start">
-                          <div className="space-y-2">
-                            <div className='flex space-x-2'>
-                            <h3 className="text-base font-medium text-gray-800">
-                              {point.title}
-                            </h3>
-                            <span
-                              className="inline-block px-2 py-1 text-xs font-medium rounded-full text-white"
-                              style={{
-                                backgroundColor: tagToColorMapping[point.tag],
-                              }}
-                            >
-                              {capitalize(point.tag)}
-                            </span>
-                            </div>
-                            <p className="text-sm text-gray-600">
-                              {point.description}
-                            </p>
-                          </div>
-
-                          </div>
-                          <div className="mt-4">
-                            <button
-                              onClick={() => setSelectedPoint(point)}
-                              className="w-full hover-button bg-[#D69C89] text-white text-sm font-medium px-4 py-2 rounded"
-                            >
-                              View Details
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                    )})
-                  )}
-                  {hasMore && (
-                    <div className="text-center py-4">
-                      <span className="text-gray-600 animate-pulse">Loading more POIs...</span>
-                    </div>
-                  )}
+    <div className="space-y-2 p-4">
+      {!points ? (
+        // Show loading state when points is undefined/null
+        <div className="animate-pulse space-y-2">
+          {Array(3).fill(null).map((_, index) => (
+            <div key={index} className="bg-gray-200 h-10 rounded"></div>
+          ))}
+        </div>
+      ) : points.length === 0 ? (
+        // Show empty state when points array is empty
+        <div className="text-center py-4 text-gray-600">
+          No points found
+        </div>
+      ) : (
+        // Show points when they exist
+        points.map((point, index) => {
+          return (
+          
+            <div
+            key={index}
+            className="card bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"
+          >
+            <div className="p-3">
+              <div className="flex justify-between items-start">
+              <div className="space-y-2">
+                <div className='flex space-x-2'>
+                <h3 className="text-base font-medium text-gray-800">
+                  {point.title}
+                </h3>
+                <span
+                  className="inline-block px-2 py-1 text-xs font-medium rounded-full text-white"
+                  style={{
+                    backgroundColor: tagToColorMapping[point.tag],
+                  }}
+                >
+                  {capitalize(point.tag)}
+                </span>
                 </div>
+                {feed && <p className="italic text-sm text-gray-600">
+                  Author:&nbsp;
+                  <a 
+                    href={`/profile/${point.user_id}`} 
+                    className="text-blue-500 hover:underline"
+                  >
+                    {point.user}
+                  </a>
+                </p>}
+                <p className="text-sm text-gray-600">
+                  {point.description}
+                </p>
               </div>
+
+              </div>
+              <div className="mt-4">
+                <button
+                  onClick={() => setSelectedPoint(point)}
+                  className="w-full hover-button bg-[#D69C89] text-white text-sm font-medium px-4 py-2 rounded"
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+          </div>
+          
+        )})
+      )}
+      {hasMore && (
+        <div className="text-center py-4">
+          <span className="text-gray-600 animate-pulse">Loading more POIs...</span>
+        </div>
+      )}
+    </div>
+  </div>
             </div>
         )}
       </div>
