@@ -31,7 +31,10 @@ export default function RootLayout({
     <RecoilRoot>
       <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
         <head>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+          <meta 
+            name="viewport" 
+            content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+          />
         </head>
         <body className="antialiased bg-gray-100">
           <MobileContainer>
