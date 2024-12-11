@@ -99,6 +99,9 @@ CORS_ALLOW_HEADERS = [
     "User-Agent",
     "X-CSRFToken",
     "X-Requested-With",
+    "accept",
+    "origin",
+    "x-csrftoken",
 ]
 
 ROOT_URLCONF = "mapquester.urls"
