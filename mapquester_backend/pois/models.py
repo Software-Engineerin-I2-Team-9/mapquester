@@ -1,6 +1,7 @@
 from django.db import models
 
 from users.models import User
+from django.utils.timezone import now
 
 
 class POI(models.Model):
@@ -18,9 +19,33 @@ class POI(models.Model):
     tag = models.CharField(max_length=100)  # A tag/category for the POI
     description = models.TextField()  # Detailed description
     reactions = models.IntegerField(default=0)  # Count of reactions
+    createdAt = models.DateTimeField(default=now, editable=False)
+    updatedAt = models.DateTimeField(default=now, editable=False)
     content = models.JSONField(
         blank=True, null=True
     )  # Storing S3 URLs as a list of strings
 
     def __str__(self):
         return self.title
+
+
+class PoiInteractions(models.Model):
+    INTERACTION_TYPES = [
+        ("reaction", "Reaction"),
+        ("comment", "Comment"),
+    ]
+
+    id = models.AutoField(primary_key=True)
+    userId = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="poi_interactions"
+    )
+    poiId = models.ForeignKey(
+        POI, on_delete=models.CASCADE, related_name="interactions"
+    )
+    interactionType = models.CharField(max_length=20, choices=INTERACTION_TYPES)
+    content = models.TextField(blank=True, null=True)  # Only required for comments
+    createdAt = models.DateTimeField(auto_now_add=True)
+    updatedAt = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.userId} {self.interactionType} on POI {self.poiId}"

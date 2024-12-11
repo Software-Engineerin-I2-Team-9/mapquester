@@ -15,6 +15,7 @@ from .models import POI
 from users.models import User
 from django.http import JsonResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.utils.timezone import now
 
 # Initialize S3 client
 s3_client = boto3.client(
@@ -257,6 +258,7 @@ def update_poi(request, poi_id):
     if "tag" in request.data:
         poi.tag = request.data["tag"]
 
+    poi.updatedAt = now()
     poi.save()
     return Response(
         {
@@ -280,5 +282,6 @@ def delete_poi(request, poi_id):
         return Response({"error": "POI not found"}, status=status.HTTP_404_NOT_FOUND)
 
     poi.isDeleted = 1
+    poi.updatedAt = now()
     poi.save()
     return Response({"message": "POI marked as deleted"}, status=status.HTTP_200_OK)
