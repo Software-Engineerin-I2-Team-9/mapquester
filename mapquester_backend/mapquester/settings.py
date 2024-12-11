@@ -90,18 +90,26 @@ CORS_ALLOW_METHODS = [
 ]
 
 CORS_ALLOW_HEADERS = [
+    # Lowercase versions
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+    # Capitalized versions
     "Accept",
     "Accept-Encoding",
     "Authorization",
-    "Content-type",
+    "Content-Type",
     "DNT",
     "Origin",
     "User-Agent",
     "X-CSRFToken",
     "X-Requested-With",
-    "accept",
-    "origin",
-    "x-csrftoken",
 ]
 
 ROOT_URLCONF = "mapquester.urls"
