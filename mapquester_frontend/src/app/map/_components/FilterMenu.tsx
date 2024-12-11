@@ -21,23 +21,30 @@ const FilterMenu: React.FC<FilterMenuProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="absolute top-12 left-0 bg-white rounded-lg shadow-lg p-3 z-50 min-w-[240px] animate-fadeIn">
-      <div className="max-h-48 overflow-y-auto mb-3 space-y-2">
-        {tags.map((tag) => (
-          <label
-            key={tag}
-            className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
-          >
-            <input
-              type="checkbox"
-              checked={selectedTags.includes(tag)}
-              onChange={() => onTagChange(tag)}
-              className="rounded border-gray-300 text-[#C91C1C] focus:ring-[#C91C1C]"
-            />
-            <span className="text-sm text-gray-700">{capitalize(tag)}</span>
-          </label>
-        ))}
+    <div className="absolute top-12 left-0 bg-white rounded-lg shadow-lg p-3 z-50 min-w-[300px] animate-fadeIn">
+      <div className="mb-4">
+        <h3 className="font-medium text-gray-900 mb-2">Tags</h3>
+        <hr className="border-gray-200 mb-2" />
+        <div className="max-h-32 overflow-y-auto">
+          <div className="flex flex-wrap gap-2">
+            {tags.map((tag) => (
+              <label
+                key={tag}
+                className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedTags.includes(tag)}
+                  onChange={() => onTagChange(tag)}
+                  className="rounded border-gray-300 text-[#C91C1C] focus:ring-[#C91C1C]"
+                />
+                <span className="text-sm text-gray-700">{capitalize(tag)}</span>
+              </label>
+            ))}
+          </div>
+        </div>
       </div>
+
       <div className="space-y-2 pt-2 border-t border-gray-100">
         <button
           onClick={onReset}
