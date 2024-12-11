@@ -546,10 +546,10 @@ const MapComponent: React.FC = () => {
           <span className="text-sm">Explore</span>
         </button>
         <button className="flex flex-col items-center text-gray-400">
-          <span className="text-sm">Saved POI</span>
+          <span className="text-sm">Feed</span>
         </button>
         <button className="flex flex-col items-center text-gray-400">
-          <span className="text-sm">Button 3</span>
+          <span className="text-sm">Profile</span>
         </button>
       </div>
 

@@ -16,6 +16,7 @@
     "next-auth": "^4.24.10",
     "react": "^18",
     "react-dom": "^18",
+    "recoil": "^0.7.7",
     "react-map-gl": "^7.1.7"
   },
   "devDependencies": {

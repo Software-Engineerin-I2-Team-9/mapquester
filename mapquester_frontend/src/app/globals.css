@@ -121,8 +121,47 @@ body {
   -moz-background-clip: text;
   -webkit-background-clip: text;
   background-clip: text;
-  font-size: 120px;
-  line-height: 1.2;
+  text-align: center;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Updated smaller font sizes */
+@media (max-width: 374px) {
+  .fire-text {
+    font-size: 24px; /* Smallest screens */
+  }
+}
+
+@media (min-width: 375px) and (max-width: 640px) {
+  .fire-text {
+    font-size: 28px; /* Mobile */
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  .fire-text {
+    font-size: 32px; /* Tablet */
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .fire-text {
+    font-size: 36px; /* Small laptop/iPad Pro */
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1366px) {
+  .fire-text {
+    font-size: 42px; /* Laptop */
+  }
+}
+
+@media (min-width: 1367px) {
+  .fire-text {
+    font-size: 48px; /* Large screens */
+  }
 }
 
 .tagline-text {
