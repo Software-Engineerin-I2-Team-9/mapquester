@@ -52,11 +52,11 @@ const Home = () => {
           </div>
         ) : (
           <div className="flex items-center justify-center h-full">
-            <div className="text-center p-8 mx-auto max-w-2xl">
-              <h1 className="fire-text text-5xl md:text-6xl lg:text-7xl font-bold mb-6 tracking-wider">
+            <div className="text-center p-4 sm:p-6 md:p-8 mx-auto w-full max-w-2xl">
+              <h1 className="fire-text font-bold mb-4 sm:mb-6 tracking-wider overflow-hidden whitespace-normal break-words">
                 MapQuester
               </h1>
-              <p className="text-xl md:text-2xl lg:text-3xl mb-12 tagline-text font-semibold px-4">
+              <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl mb-8 sm:mb-10 md:mb-12 tagline-text font-semibold px-2 sm:px-4">
                 Pin, Share, and Discover Hobbies
               </p>
               <button

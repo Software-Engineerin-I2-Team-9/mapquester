@@ -7,7 +7,7 @@ import PointDetails from './forms/PointDetails';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 
 interface PointDetailsPanelProps {
-  feed: boolean;
+  feed?: boolean;
   newPoint: Partial<Point> | null;
   selectedPoint: Point | null;
   isUpdating: boolean;

@@ -8,6 +8,7 @@ import apiClient from '@/app/api/axios';
 import FollowButton from '../_components/FollowButton';
 import Footer from '@/app/_components/Footer';
 import { fetchFollowMetadata } from '@/app/utils/userUtils';
+import { UserProfile, FollowMetadata } from '@/app/utils/types';
 
 const DEV_MODE = true; // Toggle between dev and prod mode
 
@@ -53,32 +54,7 @@ const DUMMY_FOLLOWINGS = {
   ]
 };
 
-interface UserProfile {
-  id: string;
-  username: string;
-  profile_info?: string;
-}
-
-interface Follower {
-    follower__id: string;
-    follower__username: string;
-    follower__email: string;
-  }
-
-  interface Following {
-    following__id: string;
-    following__username: string;
-    following__email: string;
-  }
-  
-interface FollowMetadata {
-    followers: Follower[];
-    followings: Following[];
-    followerCount: number;
-    followingCount: number;
-}
-
-export default function UserProfile({ params }: { params: { userId: string } }) {
+export default function Profile({ params }: { params: { userId: string } }) {
   const router = useRouter();
   const auth = useRecoilValue(authState);
   const [profile, setProfile] = useState<UserProfile | null>(null);

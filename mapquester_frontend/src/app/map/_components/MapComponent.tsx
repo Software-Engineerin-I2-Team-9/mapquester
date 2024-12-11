@@ -14,6 +14,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/app/_components/Footer';
 import PointDetailsPanel from './panels/PointDetailsPanel';
 
+type Location = {
+  latitude: number;
+  longitude: number;
+};
+
 const MapComponent: FC<{feed?: boolean}> = ({feed}) => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -65,6 +70,66 @@ const MapComponent: FC<{feed?: boolean}> = ({feed}) => {
 
   const [showReactionModal, setShowReactionModal] = useState(false);
   const [reactionUsers, setReactionUsers] = useState<ReactionUser[]>([]);
+  const [userLocation, setUserLocation] = useState<Location | null>(null);
+  const [locationPermission, setLocationPermission] = useState<string>('prompt');
+
+  useEffect(() => {
+    // Request location permission when component mounts
+    requestLocationPermission();
+  }, []);
+
+  const requestLocationPermission = async () => {
+    try {
+      const permission = await navigator.permissions.query({ name: 'geolocation' });
+      setLocationPermission(permission.state);
+
+      if (permission.state === 'granted') {
+        startLocationTracking();
+      } else if (permission.state === 'prompt') {
+        // Show a custom dialog to request permission
+        const result = window.confirm('MapQuester needs your location to provide better service. Allow location access?');
+        if (result) {
+          startLocationTracking();
+        }
+      }
+    } catch (error) {
+      console.error('Error requesting location permission:', error);
+    }
+  };
+
+  const startLocationTracking = () => {
+    if ('geolocation' in navigator) {
+      // Get initial location
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (error) => console.error('Error getting location:', error)
+      );
+
+      // Start watching location
+      const watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          setUserLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (error) => console.error('Error watching location:', error),
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0,
+        }
+      );
+
+      // Cleanup function
+      return () => navigator.geolocation.clearWatch(watchId);
+    }
+  };
 
   useEffect(() => {
     console.log("Fetching...")
@@ -507,10 +572,36 @@ useEffect(() => {
                       <div className="text-xs font-bold text-eggshell bg-black bg-opacity-50 px-1 rounded mb-1">
                         {point.title}
                       </div>
-                      <div 
-                        style={{backgroundColor: `${newlyCreatedPoint === point ? null : tagToColorMapping[point.tag]}`}} 
-                        className={`w-3 h-3 rounded-full ${newlyCreatedPoint === point ? 'bg-green-500 animate-pulse' : ''}`}
-                      />
+                      <svg 
+                        width="24" 
+                        height="38" 
+                        viewBox="0 0 42 66" 
+                        fill="none" 
+                        xmlns="http://www.w3.org/2000/svg"
+                        className={`${newlyCreatedPoint === point ? 'animate-pulse' : ''}`}
+                      >
+                        <path 
+                          opacity="0.3" 
+                          d="M25.5 63.5C25.5 63.8989 25.1636 64.3947 24.3119 64.8206C23.4902 65.2314 22.3199 65.5 21 65.5C19.6801 65.5 18.5098 65.2314 17.6881 64.8206C16.8364 64.3947 16.5 63.8989 16.5 63.5C16.5 63.1011 16.8364 62.6053 17.6881 62.1794C18.5098 61.7686 19.6801 61.5 21 61.5C22.3199 61.5 23.4902 61.7686 24.3119 62.1794C25.1636 62.6053 25.5 63.1011 25.5 63.5Z" 
+                          fill={newlyCreatedPoint === point ? '#22c55e' : tagToColorMapping[point.tag]} 
+                          stroke={newlyCreatedPoint === point ? '#22c55e' : tagToColorMapping[point.tag]}
+                        />
+                        <path 
+                          d="M22.953 41.4082L22.5 41.451V41.906V62C22.5 62.8284 21.8284 63.5 21 63.5C20.1716 63.5 19.5 62.8284 19.5 62V41.906V41.451L19.047 41.4082C8.6415 40.4251 0.5 31.663 0.5 21C0.5 9.67816 9.67816 0.5 21 0.5C32.3218 0.5 41.5 9.67816 41.5 21C41.5 31.663 33.3585 40.4251 22.953 41.4082Z" 
+                          fill="white" 
+                          stroke={newlyCreatedPoint === point ? '#22c55e' : tagToColorMapping[point.tag]}
+                        />
+                        <path 
+                          d="M21 4.5C30.1127 4.5 37.5 11.8873 37.5 21C37.5 30.1127 30.1127 37.5 21 37.5C11.8873 37.5 4.5 30.1127 4.5 21C4.5 11.8873 11.8873 4.5 21 4.5Z" 
+                          fill={newlyCreatedPoint === point ? '#22c55e' : tagToColorMapping[point.tag]} 
+                          stroke={newlyCreatedPoint === point ? '#22c55e' : tagToColorMapping[point.tag]}
+                        />
+                        <path 
+                          d="M21 14.5C24.5899 14.5 27.5 17.4101 27.5 21C27.5 24.5899 24.5899 27.5 21 27.5C17.4101 27.5 14.5 24.5899 14.5 21C14.5 17.4101 17.4101 14.5 21 14.5Z" 
+                          fill="white" 
+                          stroke={newlyCreatedPoint === point ? '#22c55e' : tagToColorMapping[point.tag]}
+                        />
+                      </svg>
                     </div>
                   </div>
                 </Marker>       
@@ -522,6 +613,17 @@ useEffect(() => {
                   anchor="bottom"
                 >
                   <div className="w-3 h-3 rounded-full bg-gray-900 opacity-50" />
+                </Marker>
+              )}
+              {userLocation && (
+                <Marker 
+                  longitude={userLocation.longitude} 
+                  latitude={userLocation.latitude}
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="8" fill="#007AFF" fillOpacity="0.2"/>
+                    <circle cx="12" cy="12" r="4" fill="#007AFF"/>
+                  </svg>
                 </Marker>
               )}
             </Map>

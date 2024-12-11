@@ -18,6 +18,32 @@ export interface Point {
 }
 
 export interface ReactionUser {
-  id: string;
-  username: string;
+    id: string;
+    username: string;
+    createdAt: string;
 }
+
+export interface UserProfile {
+    id: string;
+    username: string;
+    profile_info?: string;
+  }
+  
+export interface Follower {
+      follower__id: string;
+      follower__username: string;
+      follower__email: string;
+    }
+  
+export interface Following {
+      following__id: string;
+      following__username: string;
+      following__email: string;
+    }
+    
+export interface FollowMetadata {
+      followers: Follower[];
+      followings: Following[];
+      followerCount: number;
+      followingCount: number;
+  }

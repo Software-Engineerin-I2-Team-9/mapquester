@@ -15,6 +15,7 @@ from .models import POI
 from users.models import User
 from django.http import JsonResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.utils.timezone import now
 
 # Initialize S3 client
 s3_client = boto3.client(
@@ -34,17 +35,18 @@ def create_poi(request):
     # Step 1: Extract and validate data
     try:
         user = User.objects.get(id=data.get("userId"))
-        latitude = data.get("latitude")
-        longitude = data.get("longitude")
+        latitude = data["latitude"]
+        longitude = data["longitude"]
         is_public = data.get("isPublic", 1)
         is_deleted = data.get("isDeleted", 0)
-        title = data.get("title")
-        tag = data.get("tag")
-        description = data.get("description")
+        title = data["title"]
+        tag = data["tag"]
+        description = data["description"]
         reactions = data.get("reactions", 0)
         content_files = data.get("content", [])
         print("Content: ", content_files)
     except KeyError as e:
+        print(str(e))
         return Response(
             {"error": f"Missing required field: {str(e)}"},
             status=status.HTTP_400_BAD_REQUEST,
@@ -187,6 +189,21 @@ def get_pois(request, user_id):
             max_lat = float(request.GET.get("max_lat", 90))
             min_lon = float(request.GET.get("min_lon", -180))
             max_lon = float(request.GET.get("max_lon", 180))
+
+            # Validate coordinate ranges
+            if not (-90 <= min_lat <= 90) or not (-90 <= max_lat <= 90):
+                raise ValueError("Latitude must be between -90 and 90 degrees")
+
+            if not (-180 <= min_lon <= 180) or not (-180 <= max_lon <= 180):
+                raise ValueError("Longitude must be between -180 and 180 degrees")
+
+            # Additional validation for min/max relationship
+            if min_lat > max_lat:
+                raise ValueError("min_lat cannot be greater than max_lat")
+
+            if min_lon > max_lon:
+                raise ValueError("min_lon cannot be greater than max_lon")
+
             pois_query = pois_query.filter(
                 latitude__gte=min_lat,
                 latitude__lte=max_lat,
@@ -241,6 +258,7 @@ def update_poi(request, poi_id):
     if "tag" in request.data:
         poi.tag = request.data["tag"]
 
+    poi.updatedAt = now()
     poi.save()
     return Response(
         {
@@ -264,5 +282,6 @@ def delete_poi(request, poi_id):
         return Response({"error": "POI not found"}, status=status.HTTP_404_NOT_FOUND)
 
     poi.isDeleted = 1
+    poi.updatedAt = now()
     poi.save()
     return Response({"message": "POI marked as deleted"}, status=status.HTTP_200_OK)

@@ -5,6 +5,7 @@ import { useRecoilValue } from 'recoil';
 import { authState } from '@/app/atoms/authState';
 import apiClient from '@/app/api/axios';
 import { tagToColorMapping } from '@/app/utils/data';
+import { ReactionUser } from '@/app/utils/types';
 
 interface PointDetailsProps {
   point: Point;
@@ -20,11 +21,6 @@ interface Interaction {
   content: string;
   createdAt: string;
   username: string;
-}
-
-interface ReactionUser {
-  username: string;
-  createdAt: string;
 }
 
 const DEV_MODE = true; // Toggle between dev and prod mode
@@ -150,8 +146,9 @@ const PointDetails: FC<PointDetailsProps> = ({
       const reactionData = interactions
         .filter(i => i.interactionType === 'reaction' && i.content === '❤️')
         .map(i => ({
-          username: i.username,
-          createdAt: i.createdAt
+            id: i.userId,
+            username: i.username,
+            createdAt: i.createdAt
         }))
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       

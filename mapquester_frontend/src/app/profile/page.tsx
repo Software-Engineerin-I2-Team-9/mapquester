@@ -6,9 +6,9 @@ import { authState } from '../atoms/authState';
 import LogoutButton from '../login/_components/LogoutButton';
 import Footer from '../_components/Footer';
 import apiClient from '../api/axios';
-import { fetchFollowCounts } from '../utils/userUtils';
-
-const Settings = () => {
+import { fetchFollowMetadata } from '../utils/userUtils';
+import { UserProfile, FollowMetadata } from '../utils/types';
+const Profile = () => {
   const [auth, setAuth] = useRecoilState(authState);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -16,7 +16,9 @@ const Settings = () => {
     email: '',
     profile_info: ''
   });
-  const [followCounts, setFollowCounts] = useState({
+  const [followMetadata, setFollowMetadata] = useState<FollowMetadata>({
+    followers: [],
+    followings: [],
     followerCount: 0,
     followingCount: 0
   });
@@ -24,9 +26,9 @@ const Settings = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const [userData, counts] = await Promise.all([
+        const [userData, metadata] = await Promise.all([
           apiClient.get(`/api/v1/users/exact-user/${auth.id}/`),
-          fetchFollowCounts(auth.id)
+          fetchFollowMetadata(auth.id)
         ]);
         
         setFormData({
@@ -35,7 +37,7 @@ const Settings = () => {
           profile_info: userData.data.profile_info || ''
         });
         
-        setFollowCounts(counts);
+        setFollowMetadata(metadata);
       } catch (error) {
         console.error('Error fetching user data:', error);
       }
@@ -90,10 +92,10 @@ const Settings = () => {
             )}
             <div className="flex space-x-4 mb-4">
               <div>
-                <span className="font-bold">{followCounts.followerCount}</span> followers
+                <span className="font-bold">{followMetadata.followerCount}</span> followers
               </div>
               <div>
-                <span className="font-bold">{followCounts.followingCount}</span> following
+                <span className="font-bold">{followMetadata.followingCount}</span> following
               </div>
             </div>
             <button
@@ -175,4 +177,4 @@ const Settings = () => {
   );
 };
 
-export default Settings;
+export default Profile;
