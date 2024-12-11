@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("pois", "0005_rename_created_at_poiinteractions_createdat_and_more"),
     ]

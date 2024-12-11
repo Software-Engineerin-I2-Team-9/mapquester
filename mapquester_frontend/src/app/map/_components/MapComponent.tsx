@@ -1,8 +1,8 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, FC } from 'react';
 import Map, { Marker, ViewState, MapRef, MapMouseEvent } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Point } from '@/app/utils/types';
-import { capitalize } from '@/app/utils/fns';
+import { Point, ReactionUser } from '@/app/utils/types';
+import { capitalize, getRelativeTime } from '@/app/utils/fns';
 import { tagToColorMapping } from '@/app/utils/data';
 import apiClient from '@/app/api/axios';
 import { useRecoilState } from 'recoil';
@@ -10,17 +10,18 @@ import { authState } from '../../atoms/authState';
 import GuidePopup from './GuidePopup';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import Navbar from './NavBar';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/app/_components/Footer';
-
+import PointDetailsPanel from './panels/PointDetailsPanel';
 
 type Location = {
   latitude: number;
   longitude: number;
 };
 
-const MapComponent: React.FC = () => {
+const MapComponent: FC<{feed?: boolean}> = ({feed}) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const listViewRef = useRef<HTMLDivElement>(null);
 
   const [points, setPoints] = useState<Point[]>([]);
@@ -36,7 +37,6 @@ const MapComponent: React.FC = () => {
 
   const ALL_TAGS = ['all', ...Object.keys(tagToColorMapping)];
 
-  const [showConfirmation, setShowConfirmation] = useState(false);
   const [pendingLocation, setPendingLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [showGuide, setShowGuide] = useState(() => {
     const hasSeenGuide = localStorage.getItem('hasSeenGuide');
@@ -68,6 +68,8 @@ const MapComponent: React.FC = () => {
   const [showAddPointButton, setShowAddPointButton] = useState(false);
   const addPointButtonTimeoutRef = useRef<NodeJS.Timeout>();
 
+  const [showReactionModal, setShowReactionModal] = useState(false);
+  const [reactionUsers, setReactionUsers] = useState<ReactionUser[]>([]);
   const [userLocation, setUserLocation] = useState<Location | null>(null);
   const [locationPermission, setLocationPermission] = useState<string>('prompt');
 
@@ -133,9 +135,33 @@ const MapComponent: React.FC = () => {
     console.log("Fetching...")
     const fetchPoints = async () => {
       if (!auth?.id) return; // Ensure auth ID exists
+
+      /*
+      if (feed) {
+        const endpoint = `/api/v1/pois/feed/${auth.id}/`;
+        const response = await apiClient.get(endpoint, {
+          params: {
+            tags: selectedTags,
+          },
+          paramsSerializer: (params) => {
+            const queryString = new URLSearchParams();
+            Object.entries(params).forEach(([key, value]) => {
+              if (Array.isArray(value)) {
+                value.forEach((val) => queryString.append(key, val));
+              } else if (value !== undefined) {
+                queryString.append(key, value);
+              }
+            });
+            return queryString.toString();
+          },
+        });
+        setPoints(response.data.feed || []);
+        return;
+      }
+      */
   
       try {
-        const endpoint = `/api/v1/pois/get/${auth.id}`;
+        const endpoint = feed ? `/api/v1/pois/feed/${auth.id}` : `/api/v1/pois/get/${auth.id}`;
         const response = await apiClient.get(endpoint, {
           params: {
             viewType: isMapView ? 'map' : 'list',
@@ -154,7 +180,8 @@ const MapComponent: React.FC = () => {
             return queryString.toString();
           },
         });
-  
+        
+        console.log("Response: ", response.data.pois)
         if (isMapView) {
           // For map view, replace points directly
           setPoints(response.data.pois || []); // Ensure points are cleared if response is empty
@@ -207,12 +234,18 @@ const MapComponent: React.FC = () => {
   };
 
   const handleMapClick = useCallback((event: MapMouseEvent) => {
+    if (feed) return;
+    
     const { lngLat } = event;
     
     // Clear any existing timeout
     if (addPointButtonTimeoutRef.current) {
       clearTimeout(addPointButtonTimeoutRef.current);
     }
+    
+    // Clear selected point when clicking on map
+    setSelectedPoint(null);
+    setIsUpdating(false);
     
     setTempMarker({
       latitude: lngLat.lat,
@@ -230,7 +263,7 @@ const MapComponent: React.FC = () => {
       setTempMarker(null);
       setPendingLocation(null);
     }, 3000);
-  }, []);
+  }, [feed]);
 
   useEffect(() => {
     return () => {
@@ -249,6 +282,19 @@ const MapComponent: React.FC = () => {
     if (addPointButtonTimeoutRef.current) {
       clearTimeout(addPointButtonTimeoutRef.current);
     }
+  
+    // Center map with vertical offset
+    if (mapRef.current) {
+      const map = mapRef.current?.getMap()
+      if (map) {
+        const height = map.getContainer().clientHeight;
+        map.easeTo({
+          center: [Number(point.longitude), Number(point.latitude)],
+          offset: [0, -0.2 * height], // Shift map center up by 20% of map's height
+          duration: 1000
+        });
+      }
+    }
   };
 
   const handleAddPoint = () => {
@@ -259,20 +305,6 @@ const MapComponent: React.FC = () => {
         clearTimeout(addPointButtonTimeoutRef.current);
       }
     }
-  };
-
-  const handleConfirmNewPoint = () => {
-    if (pendingLocation) {
-      setNewPoint(pendingLocation);
-      setTempMarker(pendingLocation);
-      setSelectedPoint(null);
-    }
-    setShowConfirmation(false);
-  };
-
-  const handleCancelNewPoint = () => {
-    setPendingLocation(null);
-    setShowConfirmation(false);
   };
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -348,7 +380,7 @@ const MapComponent: React.FC = () => {
     }
   }, [selectedPoint]);
 
-  const handleUpdateChange = (field: keyof Point, value: string) => {
+  const handleUpdateChange = (field: keyof Point, value: string | boolean | Array<{filename: string, data: File}>) => {
     if (selectedPoint) {
       setSelectedPoint({ ...selectedPoint, [field]: value });
     }
@@ -392,14 +424,17 @@ const MapComponent: React.FC = () => {
   };
   
 
-  const handleFormChange = (field: keyof Point, value: string) => {
+  const handleFormChange = (field: keyof Point, value: string | boolean | Array<{filename: string, data: File}>) => {
     setNewPoint(prev => ({ ...prev, [field]: value }));
   };
 
   const handleTagChange = (tag: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
+    const newTags = selectedTags.includes(tag) 
+      ? selectedTags.filter((t) => t !== tag) 
+      : [...selectedTags, tag];
+    
+    setSelectedTags(newTags);
+    
     if (listViewRef.current) {
       listViewRef.current.scrollTop = 0;
     }
@@ -416,6 +451,64 @@ const MapComponent: React.FC = () => {
   const handleToggleFilterMenu = () => {
     setIsFilterMenuOpen((prev) => !prev);
   };
+
+  useEffect(() => {
+    // Run only once on mount
+    const initialTagParams = searchParams.getAll('tag');
+    if (initialTagParams.length > 0) {
+      setSelectedTags(initialTagParams);
+    }
+  
+    const poiId = searchParams.get('poi_id');
+    if (poiId && points.length > 0) {
+      const foundPoint = points.find(point => point.id.toString() === poiId);
+      if (foundPoint) {
+        setSelectedPoint(foundPoint);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); 
+
+// Effect to update the URL whenever selectedTags or selectedPoint change
+useEffect(() => {
+  const currentParams = new URLSearchParams();
+  
+  selectedTags.forEach(tag => {
+    currentParams.append('tag', tag);
+  });
+  
+  // Only include poi_id in URL if we're in map view
+  if (selectedPoint && isMapView) {
+    currentParams.set('poi_id', selectedPoint.id.toString());
+  }
+
+  const newUrl = currentParams.toString()
+    ? `${window.location.pathname}?${currentParams.toString()}`
+    : window.location.pathname;
+
+  if (window.location.search !== `?${currentParams.toString()}`) {
+    window.history.pushState({}, '', newUrl);
+  }
+}, [selectedTags, selectedPoint, isMapView]);
+
+// Effect to recenter the map if we have a selectedPoint
+useEffect(() => {
+  if (!selectedPoint || !mapRef.current) return;
+  
+  const map = mapRef.current.getMap();
+  if (map) {
+    const height = map.getContainer().clientHeight;
+    map.easeTo({
+      center: [Number(selectedPoint.longitude), Number(selectedPoint.latitude)],
+      offset: [0, -0.2 * height],
+      duration: 1000
+    });
+  }
+}, [selectedPoint]);
+
+
+
+  
 
   return (
     <div className="relative w-full h-full flex flex-col">
@@ -445,7 +538,7 @@ const MapComponent: React.FC = () => {
                 zoom: 11
               }}
               onMove={e => setCurrViewState(e.viewState)}
-              onClick={handleMapClick}
+              onClick={feed? undefined : handleMapClick}
               style={{width: '100%', height: '100%'}}
               mapStyle="mapbox://styles/mapbox/light-v10"
             >
@@ -466,7 +559,7 @@ const MapComponent: React.FC = () => {
                   >
                     <div className="flex flex-col items-center">
                       <div className="text-xs font-bold text-eggshell bg-black bg-opacity-50 px-1 rounded mb-1">
-                        {point.title}
+                        {feed ? `${point.user}'s ${point.title}` : point.title}
                       </div>
                       <svg 
                         width="24" 
@@ -508,7 +601,35 @@ const MapComponent: React.FC = () => {
                   latitude={tempMarker.latitude}
                   anchor="bottom"
                 >
-                  <div className="w-3 h-3 rounded-full bg-gray-900 opacity-50" />
+                  <svg 
+                    width="24" 
+                    height="38" 
+                    viewBox="0 0 42 66" 
+                    fill="none" 
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path 
+                      opacity="0.3" 
+                      d="M25.5 63.5C25.5 63.8989 25.1636 64.3947 24.3119 64.8206C23.4902 65.2314 22.3199 65.5 21 65.5C19.6801 65.5 18.5098 65.2314 17.6881 64.8206C16.8364 64.3947 16.5 63.8989 16.5 63.5C16.5 63.1011 16.8364 62.6053 17.6881 62.1794C18.5098 61.7686 19.6801 61.5 21 61.5C22.3199 61.5 23.4902 61.7686 24.3119 62.1794C25.1636 62.6053 25.5 63.1011 25.5 63.5Z" 
+                      fill="#D3D3D3"
+                      stroke="#D3D3D3"
+                    />
+                    <path 
+                      d="M22.953 41.4082L22.5 41.451V41.906V62C22.5 62.8284 21.8284 63.5 21 63.5C20.1716 63.5 19.5 62.8284 19.5 62V41.906V41.451L19.047 41.4082C8.6415 40.4251 0.5 31.663 0.5 21C0.5 9.67816 9.67816 0.5 21 0.5C32.3218 0.5 41.5 9.67816 41.5 21C41.5 31.663 33.3585 40.4251 22.953 41.4082Z" 
+                      fill="white" 
+                      stroke="#D3D3D3"
+                    />
+                    <path 
+                      d="M21 4.5C30.1127 4.5 37.5 11.8873 37.5 21C37.5 30.1127 30.1127 37.5 21 37.5C11.8873 37.5 4.5 30.1127 4.5 21C4.5 11.8873 11.8873 4.5 21 4.5Z" 
+                      fill="#D3D3D3"
+                      stroke="#D3D3D3"
+                    />
+                    <path 
+                      d="M21 14.5C24.5899 14.5 27.5 17.4101 27.5 21C27.5 24.5899 24.5899 27.5 21 27.5C17.4101 27.5 14.5 24.5899 14.5 21C14.5 17.4101 17.4101 14.5 21 14.5Z" 
+                      fill="white" 
+                      stroke="#D3D3D3"
+                    />
+                  </svg>
                 </Marker>
               )}
               {userLocation && (
@@ -541,68 +662,84 @@ const MapComponent: React.FC = () => {
           <div className={`absolute inset-0 flex flex-col ${isViewTransitioning ? 'view-transition-exit' : 'view-transition-enter'}`}>
   {/* List View Content */}
   <div ref={listViewRef} className="flex-1 overflow-y-auto bg-gray-50" onScroll={handleScroll}>
-                <div className="space-y-2 p-4">
-                  {!points.length ? (
-                    <div className="animate-pulse space-y-2">
-                      {Array(3).fill(null).map((_, index) => (
-                        <div key={index} className="bg-gray-200 h-10 rounded"></div>
-                      ))}
-                    </div>
-                  ) : (
-                    points.map((point, index) => {
-                      return (
-                      
-                        <div
-                        key={index}
-                        className="card bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"
-                      >
-                        <div className="p-3">
-                          <div className="flex justify-between items-start">
-                          <div className="space-y-2">
-                            <div className='flex space-x-2'>
-                            <h3 className="text-base font-medium text-gray-800">
-                              {point.title}
-                            </h3>
-                            <span
-                              className="inline-block px-2 py-1 text-xs font-medium rounded-full text-white"
-                              style={{
-                                backgroundColor: tagToColorMapping[point.tag],
-                              }}
-                            >
-                              {point.tag}
-                            </span>
-                            </div>
-                            <p className="text-sm text-gray-600">
-                              {point.description}
-                            </p>
-                          </div>
-
-                          </div>
-                          <div className="mt-4">
-                            <button
-                              onClick={() => setSelectedPoint(point)}
-                              className="w-full hover-button bg-[#D69C89] text-white text-sm font-medium px-4 py-2 rounded"
-                            >
-                              View Details
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                    )})
-                  )}
-                  {hasMore && (
-                    <div className="text-center py-4">
-                      <span className="text-gray-600 animate-pulse">Loading more POIs...</span>
-                    </div>
-                  )}
+    <div className="space-y-2 p-4">
+      {!points ? (
+        // Show loading state when points is undefined/null
+        <div className="animate-pulse space-y-2">
+          {Array(3).fill(null).map((_, index) => (
+            <div key={index} className="bg-gray-200 h-10 rounded"></div>
+          ))}
+        </div>
+      ) : points.length === 0 ? (
+        // Show empty state when points array is empty
+        <div className="text-center py-4 text-gray-600">
+          No points found
+        </div>
+      ) : (
+        // Show points when they exist
+        points.map((point, index) => {
+          return (
+          
+            <div
+            key={index}
+            className="card bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"
+          >
+            <div className="p-3">
+              <div className="flex justify-between items-start">
+              <div className="space-y-2">
+                <div className='flex space-x-2'>
+                <h3 className="text-base font-medium text-gray-800">
+                  {point.title}
+                </h3>
+                <span
+                  className="inline-block px-2 py-1 text-xs font-medium rounded-full text-white"
+                  style={{
+                    backgroundColor: tagToColorMapping[point.tag],
+                  }}
+                >
+                  {capitalize(point.tag)}
+                </span>
                 </div>
+                {feed && <p className="italic text-sm text-gray-600">
+                  Author:&nbsp;
+                  <a 
+                    href={`/profile/${point.user_id}`} 
+                    className="text-blue-500 hover:underline"
+                  >
+                    {point.user}
+                  </a>
+                </p>}
+                <p className="text-sm text-gray-600">
+                  {point.description}
+                </p>
               </div>
+
+              </div>
+              <div className="mt-4">
+                <button
+                  onClick={() => setSelectedPoint(point)}
+                  className="w-full hover-button bg-[#D69C89] text-white text-sm font-medium px-4 py-2 rounded"
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+          </div>
+          
+        )})
+      )}
+      {hasMore && (
+        <div className="text-center py-4">
+          <span className="text-gray-600 animate-pulse">Loading more POIs...</span>
+        </div>
+      )}
+    </div>
+  </div>
             </div>
         )}
       </div>
 
-      {showAddPointButton && isMapView && (
+      {showAddPointButton && isMapView && !feed && (
   <div 
     className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-50 animate-fadeIn"
     style={{
@@ -619,173 +756,49 @@ const MapComponent: React.FC = () => {
 )}
 
       {/* Footer Navigation */}
-      <Footer currentPage="explore" />
+      <Footer currentPage={feed ? "feed" : "explore"} />
 
       {/* Modals and popups */}
       <GuidePopup isOpen={showGuide} onClose={() => setShowGuide(false)} />
-      
-      <ConfirmationDialog 
-        isOpen={showConfirmation}
-        onConfirm={handleConfirmNewPoint}
-        onCancel={handleCancelNewPoint}
-      />
 
-      {(newPoint || selectedPoint) && (
-        <div className="absolute inset-x-0 bottom-[60px] z-50">
+      {showReactionModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
           <div 
-            className="w-full bg-white/95 backdrop-blur-sm p-4 rounded-t-lg shadow-lg relative animate-slideUp"
-            style={{
-              animation: 'slideUp 0.3s ease-out forwards',
-            }}
-          >
-            {newPoint ? (
-              <form onSubmit={handleFormSubmit}>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Title</label>
-                    <input
-                      type="text"
-                      placeholder="Enter name"
-                      value={newPoint.title || ''}
-                      onChange={(e) => handleFormChange('title', e.target.value)}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#C91C1C] focus:border-[#C91C1C] sm:text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Tag</label>
-                    <select
-                      value={newPoint.tag || ''}
-                      onChange={(e) => handleFormChange('tag', e.target.value)}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#C91C1C] focus:border-[#C91C1C] sm:text-sm"
-                    >
-                      <option value="" disabled>Select your option</option>
-                      {ALL_TAGS.filter(tag => tag !== 'all').map(tag => (
-                        <option key={tag} value={tag}>
-                          {capitalize(tag)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Description</label>
-                    <textarea
-                      placeholder="Enter description"
-                      value={newPoint.description || ''}
-                      onChange={(e) => handleFormChange('description', e.target.value)}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#C91C1C] focus:border-[#C91C1C] sm:text-sm"
-                      rows={3}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Attach Image</label>
-                    <input
-                      type="file"
-                      className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#C91C1C] file:text-white hover:file:bg-red-600"
-                    />
-                  </div>
-                  <div className="flex justify-end space-x-2">
-                    <button
-                      type="submit"
-                      className="bg-[#C91C1C] hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full"
-                    >
-                      Create Point
-                    </button>
-                    <button
-                      type="button"
-                      onClick={cancelPointCreation}
-                      className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full"
-                    >
-                      Cancel
-                    </button>
-                  </div>
+            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+            onClick={() => setShowReactionModal(false)}
+          />
+          <div className="relative bg-white rounded-lg p-6 mx-4 shadow-xl max-w-[90%] w-[400px] z-10">
+            <div className="flex justify-center items-center mb-4">
+              <h4 className="text-sm font-medium text-gray-700">Reactions</h4>
+            </div>
+            <div className="space-y-2">
+              {reactionUsers.map((user, index) => (
+                <div key={index} className="flex justify-start px-2">
+                  <span className="text-sm">{user.username}</span>
                 </div>
-              </form>
-            ) : selectedPoint ? (
-              <>
-                <button
-                  onClick={() => setSelectedPoint(null)}
-                  className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-                >
-                  &times;
-                </button>
-                {isUpdating ? (
-                  <form onSubmit={handleUpdateSubmit}>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Title</label>
-                        <input
-                          type="text"
-                          value={selectedPoint.title}
-                          onChange={(e) => handleUpdateChange('title', e.target.value)}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#C91C1C] focus:border-[#C91C1C] sm:text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Tag</label>
-                        <select
-                          value={selectedPoint.tag}
-                          onChange={(e) => handleUpdateChange('tag', e.target.value)}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#C91C1C] focus:border-[#C91C1C] sm:text-sm"
-                        >
-                          {ALL_TAGS.filter(tag => tag !== 'all').map(tag => (
-                            <option key={tag} value={tag}>
-                              {capitalize(tag)}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Description</label>
-                        <textarea
-                          value={selectedPoint.description}
-                          onChange={(e) => handleUpdateChange('description', e.target.value)}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#C91C1C] focus:border-[#C91C1C] sm:text-sm"
-                          rows={3}
-                        />
-                      </div>
-                      <div className="flex justify-end space-x-2">
-                        <button
-                          type="submit"
-                          className="bg-[#C91C1C] hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full"
-                        >
-                          Save Changes
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setIsUpdating(false)}
-                          className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  </form>
-                ) : (
-                  <>
-                    <h3 className="text-xl font-semibold text-gray-800 mb-3">{selectedPoint.title}</h3>
-                    <p className="text-gray-800 mb-4">{selectedPoint.description}</p>
-                    <p className="text-gray-800 mb-4">Tag: {capitalize(selectedPoint.tag)}</p>
-                    <div className="flex space-x-2">
-                      <button 
-                        onClick={() => setIsUpdating(true)}
-                        className="bg-[#D69C89] hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-                      >
-                        Update
-                      </button>
-                      <button 
-                        onClick={() => deletePoint(selectedPoint)}
-                        className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </>
-                )}
-              </>
-            ) : null}
+              ))}
+            </div>
           </div>
         </div>
       )}
+
+      <PointDetailsPanel
+        feed={feed}
+        newPoint={newPoint}
+        selectedPoint={selectedPoint}
+        isUpdating={isUpdating}
+        onFormSubmit={handleFormSubmit}
+        onFormChange={handleFormChange}
+        onCancelPointCreation={cancelPointCreation}
+        onUpdateSubmit={handleUpdateSubmit}
+        onUpdateChange={handleUpdateChange}
+        onDeletePoint={deletePoint}
+        setSelectedPoint={setSelectedPoint}
+        setIsUpdating={setIsUpdating}
+        tags={ALL_TAGS.filter(tag => tag !== 'all')}
+        setShowReactionModal={setShowReactionModal}
+        setReactionUsers={setReactionUsers}
+      />
     </div>
   );
 };

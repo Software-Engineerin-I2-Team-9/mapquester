@@ -8,7 +8,6 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 # Get Feed (POIs by followed users)
 def get_feed(request, user_id):
-
     if request.method == "GET":
         tags = request.GET.getlist("tags")
         view_type = request.GET.get("viewType")
@@ -31,7 +30,6 @@ def get_feed(request, user_id):
 
         # Handling the list view with pagination
         if view_type == "list":
-
             # Pagination parameters
             try:
                 page = int(request.GET.get("page", 1))
@@ -74,7 +72,7 @@ def get_feed(request, user_id):
 
             # Response with pagination metadata
             response_data = {
-                "feed": poi_list,
+                "pois": poi_list,
                 "pagination": {
                     "page": page,
                     "page_size": page_size,
@@ -107,9 +105,27 @@ def get_feed(request, user_id):
                     status=400,
                 )
 
-            # Convert the filtered data to a list of dictionaries
-            pois_filtered = list(pois_query.values())
-            response_data = {"pois": pois_filtered}
+            poi_list = []
+            for poi in pois_query:
+                poi_user = poi.userId.username if poi.userId else "Unknown User"
+
+                poi_list.append(
+                    {
+                        "id": poi.id,
+                        "user_id": poi.userId.id if poi.userId else None,
+                        "user": poi_user,
+                        "title": poi.title,
+                        "description": poi.description,
+                        "latitude": poi.latitude,
+                        "longitude": poi.longitude,
+                        "tag": poi.tag,
+                        "created_at": poi.createdAt,
+                        "updated_at": poi.updatedAt,
+                        "content_urls": poi.content,
+                    }
+                )
+
+            response_data = {"pois": poi_list}
 
             return JsonResponse(response_data)
 
