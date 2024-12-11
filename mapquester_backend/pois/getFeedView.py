@@ -8,8 +8,10 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 # Get Feed (POIs by followed users)
 def get_feed(request, user_id):
+
     if request.method == "GET":
         tags = request.GET.getlist("tags")
+        view_type = request.GET.get("viewType")
 
         try:
             user = User.objects.get(id=user_id)
@@ -27,56 +29,89 @@ def get_feed(request, user_id):
         if tags:
             pois = pois.filter(tag__in=tags)
 
-        # Pagination parameters
-        try:
-            page = int(request.GET.get("page", 1))
-            page_size = int(request.GET.get("page_size", 10))
-        except ValueError:
-            return JsonResponse({"error": "Invalid pagination parameters"}, status=400)
+        # Handling the list view with pagination
+        if view_type == "list":
 
-        # Paginate the POIs
-        paginator = Paginator(pois, page_size)
-        try:
-            pois_page = paginator.page(page)
-        except PageNotAnInteger:
-            pois_page = paginator.page(1)
-        except EmptyPage:
-            pois_page = paginator.page(paginator.num_pages)
+            # Pagination parameters
+            try:
+                page = int(request.GET.get("page", 1))
+                page_size = int(request.GET.get("page_size", 10))
+            except ValueError:
+                return JsonResponse(
+                    {"error": "Invalid pagination parameters"}, status=400
+                )
 
-        # Build paginated POI list
-        poi_list = []
-        for poi in pois_page.object_list:
-            # Check if the POI has a valid userId and if it's not null
-            poi_user = poi.userId.username if poi.userId else "Unknown User"
+            # Paginate the POIs
+            paginator = Paginator(pois, page_size)
+            try:
+                pois_page = paginator.page(page)
+            except PageNotAnInteger:
+                pois_page = paginator.page(1)
+            except EmptyPage:
+                pois_page = paginator.page(paginator.num_pages)
 
-            poi_list.append(
-                {
-                    "id": poi.id,
-                    "user_id": poi.userId.id if poi.userId else None,
-                    "user": poi_user,
-                    "title": poi.title,
-                    "description": poi.description,
-                    "latitude": poi.latitude,
-                    "longitude": poi.longitude,
-                    "tag": poi.tag,
-                    "created_at": poi.createdAt,
-                    "updated_at": poi.updatedAt,
-                    "content_urls": poi.content,
-                }
-            )
+            # Build paginated POI list
+            poi_list = []
+            for poi in pois_page.object_list:
+                # Check if the POI has a valid userId and if it's not null
+                poi_user = poi.userId.username if poi.userId else "Unknown User"
 
-        # Response with pagination metadata
-        response_data = {
-            "feed": poi_list,
-            "pagination": {
-                "page": page,
-                "page_size": page_size,
-                "total_pages": paginator.num_pages,
-                "total_pois": paginator.count,
-            },
-        }
+                poi_list.append(
+                    {
+                        "id": poi.id,
+                        "user_id": poi.userId.id if poi.userId else None,
+                        "user": poi_user,
+                        "title": poi.title,
+                        "description": poi.description,
+                        "latitude": poi.latitude,
+                        "longitude": poi.longitude,
+                        "tag": poi.tag,
+                        "created_at": poi.createdAt,
+                        "updated_at": poi.updatedAt,
+                        "content_urls": poi.content,
+                    }
+                )
 
-        return JsonResponse(response_data)
+            # Response with pagination metadata
+            response_data = {
+                "feed": poi_list,
+                "pagination": {
+                    "page": page,
+                    "page_size": page_size,
+                    "total_pages": paginator.num_pages,
+                    "total_pois": paginator.count,
+                },
+            }
+
+            return JsonResponse(response_data)
+
+        # Handle map view with coordinate bounds
+        elif view_type == "map":
+            # Retrieve bounding box coordinates from request
+            try:
+                min_lat = float(request.GET.get("min_lat", -90))
+                max_lat = float(request.GET.get("max_lat", 90))
+                min_lon = float(request.GET.get("min_lon", -180))
+                max_lon = float(request.GET.get("max_lon", 180))
+                pois_query = pois.filter(
+                    latitude__gte=min_lat,
+                    latitude__lte=max_lat,
+                    longitude__gte=min_lon,
+                    longitude__lte=max_lon,
+                )
+            except (KeyError, ValueError):
+                return JsonResponse(
+                    {
+                        "error": "Please provide valid min_lat, max_lat, min_lon, and max_lon values for map view"
+                    },
+                    status=400,
+                )
+
+            # Convert the filtered data to a list of dictionaries
+            pois_filtered = list(pois_query.values())
+            response_data = {"pois": pois_filtered}
+
+            return JsonResponse(response_data)
 
     else:
         return JsonResponse({"error": "Invalid request method"}, status=405)
